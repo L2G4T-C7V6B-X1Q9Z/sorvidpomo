@@ -1,0 +1,8 @@
+Tasks:
+
+
+- [ ] Add background continuous activity so that:
+  - [ ] Sound continues playing in background tabs
+  - [ ] Graphics/animations continue in background
+- [ ] Add +5 minutes button
+- [ ] Add play/pause control via space bar
