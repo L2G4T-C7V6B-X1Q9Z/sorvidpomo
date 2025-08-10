@@ -2,7 +2,19 @@ Tasks:
 
 
 - [ ] Add background continuous activity so that:
-  - [ ] Sound continues playing in background tabs
-  - [ ] Graphics/animations continue in background
+	- [ ] Sound continues playing in background tabs
+	- [ ] Graphics/animations continue in background
 - [ ] Add +5 minutes button
 - [ ] Add play/pause control via space bar
+- [ ] Suraj suggests a research arm (data collection, location, timing, etc. need to flex out)
+- [ ] Inspired by Suraj, optimize button per certain settings, for example tailor a pomo session per the requirements of the study session
+- [ ] Focus black background subtle dot wave animation
+- [ ] Auto hide controls after inactivity?
+- [ ] reorganize play/pause buttons, timer buttons
+- [ ] mobile app optimize
+- [ ] add more grain to possibly both focus/relax backgrounds
+- [ ] update sound to be less basic
+- [ ] session complete sounds need to be louder
+- [ ] sound control options
+- [ ] david: look at app.txx review it
+
