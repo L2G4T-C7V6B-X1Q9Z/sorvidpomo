@@ -1,9 +1,9 @@
 Tasks:
 
 
-- [ ] Add background continuous activity so that:
-	- [ ] Sound continues playing in background tabs
-	- [ ] Graphics/animations continue in background
+- [x] Add background continuous activity so that:
+	- [x] Sound continues playing in background tabs
+	- [x] Graphics/animations continue in background
 - [ ] Add +5 minutes button
 - [ ] Add play/pause control via space bar
 - [ ] Suraj suggests a research arm (data collection, location, timing, etc. need to flex out)
@@ -15,6 +15,6 @@ Tasks:
 - [ ] add more grain to possibly both focus/relax backgrounds
 - [ ] update sound to be less basic
 - [ ] session complete sounds need to be louder
-- [ ] sound control options
-- [ ] david: look at app.txx review it
+- [ ] sound control options (mute, volume)
+- [x] david: look at app.txx review it
 
