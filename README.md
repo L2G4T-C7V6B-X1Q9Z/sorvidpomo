@@ -1,18 +1,20 @@
-# Sorvid Pomodoro Webapp
+[Live demo](https://l2g4t-c7v6b-x1q9z.github.io/sorvidpomo/)
 
-Here's the link to the current webapp in development.
-https://l2g4t-c7v6b-x1q9z.github.io/sorvidpomo/
+# Pomodoro — a calmer, prettier focus timer
 
+We built this because we were tired of utilitarian timers that felt like spreadsheets; this one puts focus first with a clean dial, subtle motion, and tasteful audio cues. Set your focus and break lengths, hit play, and let it auto-switch cycles while the animated ring and big tabular time keep your brain in the zone. Breaks get a soft, ambient backdrop; focus mode stays minimal and dark. Built with React, Framer Motion, Tailwind, and the Web Audio API.
 
-# React + Vite
+## Features
+- Editable focus/break durations with smooth auto-switching
+- Play/Pause and Skip controls with crisp, low-key sounds
+- Large animated dial + readable, tabular MM:SS
+- Light “break” ambience; distraction-free “focus” look
+- Works even if you switch tabs (timer uses wall-clock time)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Quick start
+```bash
+# clone then:
+npm install
+npm run dev
+# build for production:
+npm run build
