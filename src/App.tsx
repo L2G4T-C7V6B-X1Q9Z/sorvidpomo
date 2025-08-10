@@ -34,14 +34,19 @@ const SUNSET: Hsl[] = [
 ];
 const grad = (c: Hsl, a1 = 0.95, a2 = 0.75) =>
   `radial-gradient(circle at 50% 50%, hsla(${c.h},${c.s}%,${c.l}%,${a1}), hsla(${c.h},${c.s}%,${Math.max(
-    0, c.l - 10
+    0,
+    c.l - 10
   )}%,${a2}) 60%, transparent 72%)`;
 
 type Blob = {
   c: Hsl;
-  x: number; y: number; s: number;
-  vx: number; vy: number;
-  phase: number; wobble: number;
+  x: number;
+  y: number;
+  s: number;
+  vx: number;
+  vy: number;
+  phase: number;
+  wobble: number;
 };
 
 function BlobField({ count = 6 }: { count?: number }) {
@@ -80,11 +85,24 @@ function BlobField({ count = 6 }: { count?: number }) {
       b.x += b.vx * 0.58;
       b.y += b.vy * 0.58;
 
-      const padX = 1.5, padY = 2.0;
-      if (b.x < padX) { b.x = padX; b.vx = Math.abs(b.vx) * 0.96; }
-      if (b.x > 100 - padX) { b.x = 100 - padX; b.vx = -Math.abs(b.vx) * 0.96; }
-      if (b.y < padY) { b.y = padY; b.vy = Math.abs(b.vy) * 0.96; }
-      if (b.y > 100 - padY) { b.y = 100 - padY; b.vy = -Math.abs(b.vy) * 0.96; }
+      const padX = 1.5,
+        padY = 2.0;
+      if (b.x < padX) {
+        b.x = padX;
+        b.vx = Math.abs(b.vx) * 0.96;
+      }
+      if (b.x > 100 - padX) {
+        b.x = 100 - padX;
+        b.vx = -Math.abs(b.vx) * 0.96;
+      }
+      if (b.y < padY) {
+        b.y = padY;
+        b.vy = Math.abs(b.vy) * 0.96;
+      }
+      if (b.y > 100 - padY) {
+        b.y = 100 - padY;
+        b.vy = -Math.abs(b.vy) * 0.96;
+      }
 
       b.phase += b.wobble * dt;
     });
@@ -139,6 +157,8 @@ class SoundEngine {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
   unlocked = false;
+  // Track scheduled completion tones on the AudioContext timeline
+  scheduled: OscillatorNode[] = [];
 
   ensure() {
     if (!this.ctx) {
@@ -154,32 +174,54 @@ class SoundEngine {
   unlock = async () => {
     this.ensure();
     if (this.ctx && !this.unlocked) {
-      try { await this.ctx.resume(); this.unlocked = true; } catch {}
+      try {
+        await this.ctx.resume();
+        this.unlocked = true;
+      } catch {}
     }
   };
 
   blip(
     f: number,
     o: Partial<{
-      type: OscillatorType; attack: number; decay: number; release: number; peak: number; sweep: number; lpf: number;
+      type: OscillatorType;
+      attack: number;
+      decay: number;
+      release: number;
+      peak: number;
+      sweep: number;
+      lpf: number;
     }> = {}
   ) {
     this.ensure();
     if (!this.ctx || !this.master) return;
-    const { type = "triangle", attack = 0.003, decay = 0.12, release = 0.06, peak = 0.8, sweep = 0, lpf = 9000 } = o;
+    const {
+      type = "triangle",
+      attack = 0.003,
+      decay = 0.12,
+      release = 0.06,
+      peak = 0.8,
+      sweep = 0,
+      lpf = 9000,
+    } = o;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const g = this.ctx.createGain();
     const lp = this.ctx.createBiquadFilter();
-    lp.type = "lowpass"; lp.frequency.value = lpf;
-    osc.type = type; osc.frequency.value = f;
+    lp.type = "lowpass";
+    lp.frequency.value = lpf;
+    osc.type = type;
+    osc.frequency.value = f;
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(peak, t + attack);
     g.gain.exponentialRampToValueAtTime(Math.max(1e-4, 0.001), t + attack + decay);
     g.gain.exponentialRampToValueAtTime(Math.max(1e-4, 0.0005), t + attack + decay + release);
     if (sweep) osc.frequency.linearRampToValueAtTime(f + sweep, t + attack + decay);
-    osc.connect(lp); lp.connect(g); g.connect(this.master!);
-    osc.start(t); osc.stop(t + attack + decay + release + 0.02);
+    osc.connect(lp);
+    lp.connect(g);
+    g.connect(this.master!);
+    osc.start(t);
+    osc.stop(t + attack + decay + release + 0.02);
   }
   chord(freqs: number[], opts: Parameters<SoundEngine["blip"]>[1]) {
     freqs.forEach((f, i) => this.blip(f, { ...opts, peak: (opts?.peak ?? 0.8) * (i ? 0.7 : 1) }));
@@ -187,11 +229,53 @@ class SoundEngine {
   play(kind: "start" | "pause" | "skip" | "complete") {
     if (kind === "start") this.chord([520, 780], { attack: 0.004, decay: 0.11, release: 0.07, sweep: 14 });
     if (kind === "pause") this.blip(420, { type: "sine", decay: 0.12, release: 0.06, sweep: -18 });
-    if (kind === "skip")  this.blip(600, { type: "triangle", attack: 0.0015, decay: 0.07, release: 0.03, sweep: -10, lpf: 5200, peak: 0.55 });
+    if (kind === "skip") this.blip(600, { type: "triangle", attack: 0.0015, decay: 0.07, release: 0.03, sweep: -10, lpf: 5200, peak: 0.55 });
     if (kind === "complete") {
-      const a=440; [a, a*1.25, a*1.5].forEach((f,i)=>setTimeout(()=>this.blip(f,{type:"sine",decay:0.12,release:0.1,peak:0.85}), i*70));
+      // Fallback chime pattern (used only when needed)
+      const a = 440;
+      [a, a * 1.25, a * 1.5].forEach((f, i) =>
+        setTimeout(() => this.blip(f, { type: "sine", decay: 0.12, release: 0.1, peak: 0.85 }), i * 70)
+      );
     }
   }
+
+  cancelScheduled = () => {
+    if (this.scheduled && this.scheduled.length) {
+      this.scheduled.forEach((o) => {
+        try {
+          o.stop(0);
+        } catch {}
+      });
+      this.scheduled = [];
+    }
+  };
+
+  scheduleCompleteIn = (delaySec: number) => {
+    this.ensure();
+    if (!this.ctx || !this.master) return;
+    this.cancelScheduled();
+    const t0 = this.ctx.currentTime + Math.max(0, delaySec);
+    const freqs = [440, 440 * 1.25, 440 * 1.5];
+    freqs.forEach((f, i) => {
+      const start = t0 + i * 0.07;
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      const lp = this.ctx!.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 9000;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f, start);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(0.85, start + 0.004);
+      g.gain.exponentialRampToValueAtTime(Math.max(1e-4, 0.0005), start + 0.004 + 0.12 + 0.1);
+      osc.connect(lp);
+      lp.connect(g);
+      g.connect(this.master!);
+      osc.start(start);
+      osc.stop(start + 0.004 + 0.12 + 0.1 + 0.02);
+      this.scheduled.push(osc);
+    });
+  };
 }
 const sound = new SoundEngine();
 
@@ -220,10 +304,7 @@ function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
   const cls = `${dark ? "text-white" : "text-black"} text-6xl md:text-7xl font-bold`;
 
   return (
-    <div
-      className={`${cls} inline-flex whitespace-nowrap`}
-      style={{ fontVariantNumeric: "tabular-nums", lineHeight: 1 }}
-    >
+    <div className={`${cls} inline-flex whitespace-nowrap`} style={{ fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
       {chars.map((ch, i) => {
         const key = `${i}-${ch}`;
         const isDigit = /\d/.test(ch);
@@ -231,9 +312,7 @@ function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
         return (
           <span
             key={key}
-            className={`relative inline-block text-center align-middle ${
-              isColon ? "translate-y-[-10%]" : ""
-            }`}
+            className={`relative inline-block text-center align-middle ${isColon ? "translate-y-[-10%]" : ""}`}
             style={{ width: "0.6em", verticalAlign: "middle" }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
@@ -255,7 +334,6 @@ function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
     </div>
   );
 }
-
 
 /* ===================== MODE tag ===================== */
 function ModeTag({ mode, isBreak }: { mode: "focus" | "break"; isBreak: boolean }) {
@@ -301,11 +379,90 @@ export default function App() {
   const [totalSec, setTotalSec] = useState(focusMin * 60);
   const [now, setNow] = useState(Date.now());
 
-  // tick
-  useAnimationFrame(() => { if (isRunning && endAt) setNow(Date.now()); });
+  // Notifications
+  const [notifications, setNotifications] = useState(false);
+  const notifyTimeoutRef = useRef<number | null>(null);
+  const clearNotifyTimer = () => {
+    if (notifyTimeoutRef.current !== null) {
+      clearTimeout(notifyTimeoutRef.current);
+      notifyTimeoutRef.current = null;
+    }
+  };
+  const notifyNow = (next: Mode) => {
+    if (!notifications) return;
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    try {
+      const title = next === "focus" ? "Break finished" : "Focus finished";
+      const body = next === "focus" ? "Time to focus." : "Time for a break.";
+      new Notification(title, { body });
+    } catch {}
+  };
+  const scheduleNotifyIn = (delaySec: number, next: Mode) => {
+    if (!notifications) return;
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    clearNotifyTimer();
+    notifyTimeoutRef.current = window.setTimeout(() => notifyNow(next), Math.max(0, delaySec) * 1000);
+  };
+  useEffect(() => {
+    if (!notifications) clearNotifyTimer();
+  }, [notifications]);
+
+  // --- Background chime reliability ---
+  // Track absolute end time (ms) and whether we've already beeped for that timestamp.
+  const scheduledEndRef = useRef<number | null>(null);
+  const beepedForRef = useRef<number | null>(null);
+  const beepMarkTimeoutRef = useRef<number | null>(null);
+  const clearBeepMark = () => {
+    if (beepMarkTimeoutRef.current !== null) {
+      clearTimeout(beepMarkTimeoutRef.current);
+      beepMarkTimeoutRef.current = null;
+    }
+  };
+  const scheduleBeepMarkIn = (delaySec: number) => {
+    clearBeepMark();
+    beepMarkTimeoutRef.current = window.setTimeout(() => {
+      if (scheduledEndRef.current) beepedForRef.current = scheduledEndRef.current;
+    }, Math.max(0, delaySec) * 1000);
+  };
+
+  // tick (animation frame)
+  useAnimationFrame(() => {
+    if (isRunning && endAt) setNow(Date.now());
+  });
+
+  // background tick so time advances when tab is hidden
+  useEffect(() => {
+    if (!isRunning || endAt === null) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [isRunning, endAt]);
+
+  // If tab was hidden and audio got suspended, play a catch-up chime on return
+  useEffect(() => {
+    const checkMissed = () => {
+      sound.unlock(); // try to resume AudioContext
+      const to = scheduledEndRef.current;
+      if (!isRunning || !to) return;
+      if (!beepedForRef.current && Date.now() >= to) {
+        sound.play("complete");
+        beepedForRef.current = to;
+      }
+    };
+    document.addEventListener("visibilitychange", checkMissed);
+    window.addEventListener("focus", checkMissed);
+    return () => {
+      document.removeEventListener("visibilitychange", checkMissed);
+      window.removeEventListener("focus", checkMissed);
+    };
+  }, [isRunning]);
 
   // remaining
-  const remaining = useMemo(() => (endAt ? Math.max(0, (endAt - now) / 1000) : pausedSec), [endAt, now, pausedSec]);
+  const remaining = useMemo(
+    () => (endAt ? Math.max(0, (endAt - now) / 1000) : pausedSec),
+    [endAt, now, pausedSec]
+  );
   const fracRemaining = clamp01(totalSec ? remaining / totalSec : 0);
 
   // idle-only reset on changes
@@ -321,11 +478,10 @@ export default function App() {
     }
   }, [mode, focusMin, breakMin, isRunning]);
 
-  // auto-switch
+  // auto-switch when a session completes
   useEffect(() => {
     if (!isRunning || endAt === null) return;
     if (remaining <= 0) {
-      sound.play("complete");
       const next: Mode = mode === "focus" ? "break" : "focus";
       const nt = (next === "focus" ? focusMin : breakMin) * 60;
       setMode(next);
@@ -335,27 +491,67 @@ export default function App() {
       const newEnd = Date.now() + nt * 1000;
       setEndAt(newEnd);
       setNow(newEnd - nt * 1000);
+
+      // notify + ensure completion chime even if tab was hidden/suspended
+      notifyNow(next);
+      if (scheduledEndRef.current && beepedForRef.current !== scheduledEndRef.current) {
+        // fallback chime if scheduled WebAudio didn’t fire while hidden
+        sound.play("complete");
+        beepedForRef.current = scheduledEndRef.current;
+      }
+      sound.cancelScheduled();
+      sound.scheduleCompleteIn(nt);
+      scheduledEndRef.current = newEnd;
+      beepedForRef.current = null;
+      scheduleBeepMarkIn(nt);
+      clearNotifyTimer();
+      scheduleNotifyIn(nt, next === "focus" ? "break" : "focus");
+
       lastKeyRef.current = `${next}-${focusMin}-${breakMin}`;
     }
   }, [remaining, isRunning, endAt, mode, focusMin, breakMin]);
 
   // controls (no persistent focus on buttons)
-  const blurTarget = (e: React.SyntheticEvent<HTMLButtonElement>) => (e.currentTarget as HTMLButtonElement).blur();
+  const blurTarget = (e: React.SyntheticEvent<HTMLButtonElement>) =>
+    (e.currentTarget as HTMLButtonElement).blur();
 
   const playPause = async () => {
     await sound.unlock();
     if (!isRunning) {
-      const rem = endAt ? Math.max(0, (endAt - Date.now()) / 1000) : pausedSec;
-      setEndAt(Date.now() + rem * 1000);
+      // Robust remaining time: if previous endAt is stale/past, use pausedSec
+      let rem: number;
+      if (endAt && endAt > Date.now()) {
+        rem = (endAt - Date.now()) / 1000;
+      } else {
+        rem = pausedSec;
+      }
+      if (rem < 0.5) rem = pausedSec || totalSec || 60; // avoid instant chime on start
+      const newEnd = Date.now() + rem * 1000;
+      setEndAt(newEnd);
       setIsRunning(true);
       setNow(Date.now());
-      sound.play("start");
+
+      const next: Mode = mode === "focus" ? "break" : "focus";
+      sound.cancelScheduled();
+      sound.scheduleCompleteIn(rem);
+      scheduledEndRef.current = newEnd;
+      beepedForRef.current = null;
+      scheduleBeepMarkIn(rem);
+      clearNotifyTimer();
+      scheduleNotifyIn(rem, next);
+
     } else {
       const rem = Math.max(0, endAt ? (endAt - Date.now()) / 1000 : pausedSec);
       setIsRunning(false);
       setEndAt(null);
       setPausedSec(rem);
-      sound.play("pause");
+
+      sound.cancelScheduled();
+      scheduledEndRef.current = null;
+      beepedForRef.current = null;
+      clearBeepMark();
+      clearNotifyTimer();
+
     }
   };
 
@@ -368,7 +564,13 @@ export default function App() {
     setEndAt(null);
     setTotalSec(sec);
     setPausedSec(sec);
-    sound.play("skip");
+
+    sound.cancelScheduled();
+    scheduledEndRef.current = null;
+    beepedForRef.current = null;
+    clearBeepMark();
+    clearNotifyTimer();
+
   };
 
   // theming
@@ -376,12 +578,14 @@ export default function App() {
   const textMain = isBreak ? "text-black/90" : "text-white/90";
   const label = isBreak ? "text-black/60" : "text-white/60";
 
-  // === unified chip sizing (smaller) ===
+  // unified chip sizing
   const CONTROL_W = "w-20";
   const CONTROL_H = "h-9";
 
   // Inputs: keep focus ring; Buttons: no ring/outline
-  const inputRing = isBreak ? "ring-1 ring-black/10 focus:ring-2 focus:ring-black/20" : "ring-1 ring-white/10 focus:ring-2 focus:ring-white/30";
+  const inputRing = isBreak
+    ? "ring-1 ring-black/10 focus:ring-2 focus:ring-black/20"
+    : "ring-1 ring-white/10 focus:ring-2 focus:ring-white/30";
   const surface = isBreak ? "bg-black/12 text-black backdrop-blur-md" : "bg-white/10 text-white backdrop-blur-md";
   const inputCls = `${CONTROL_W} ${CONTROL_H} leading-none rounded-xl px-2 text-center outline-none ${inputRing} ${surface} transition-colors`;
   const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
@@ -394,7 +598,7 @@ export default function App() {
       {/* Base background */}
       <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000" }} />
 
-      {/* BREAK: blobs + HEAVIER grain overlay */}
+      {/* BREAK: blobs + grain overlay */}
       <AnimatePresence>{isBreak && <BlobField key="sunset" />}</AnimatePresence>
       {isBreak && (
         <div
@@ -404,7 +608,7 @@ export default function App() {
               "radial-gradient(rgba(0,0,0,0.28) 1px, transparent 1.4px)",
               "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 2px)",
               "radial-gradient(rgba(0,0,0,0.14) 1px, transparent 3px)",
-              "radial-gradient(rgba(0,0,0,0.10) 1px, transparent 4px)"
+              "radial-gradient(rgba(0,0,0,0.10) 1px, transparent 4px)",
             ].join(","),
             backgroundSize: "1.8px 1.8px, 3.4px 3.4px, 5px 5px, 7px 7px",
             backgroundPosition: "0 0, 1px 1px, 0.5px 0.5px, 0.25px 0.25px",
@@ -428,21 +632,27 @@ export default function App() {
               <div className="flex flex-col items-center shrink-0">
                 <label className={`${label} text-[10px] mb-1`}>Focus (min)</label>
                 <input
-                  type="number" min={1} max={600}
+                  type="number"
+                  min={1}
+                  max={600}
                   value={focusText}
                   onChange={(e) => setFocusText(onlyDigits(e.target.value))}
                   onBlur={() => setFocusText((v) => (v.trim() === "" ? "30" : normalizeMinutes(v, 30)))}
-                  className={inputCls} inputMode="numeric"
+                  className={inputCls}
+                  inputMode="numeric"
                 />
               </div>
               <div className="flex flex-col items-center shrink-0">
                 <label className={`${label} text-[10px] mb-1`}>Break (min)</label>
                 <input
-                  type="number" min={1} max={600}
+                  type="number"
+                  min={1}
+                  max={600}
                   value={breakText}
                   onChange={(e) => setBreakText(onlyDigits(e.target.value))}
                   onBlur={() => setBreakText((v) => (v.trim() === "" ? "5" : normalizeMinutes(v, 5)))}
-                  className={inputCls} inputMode="numeric"
+                  className={inputCls}
+                  inputMode="numeric"
                 />
               </div>
             </div>
@@ -472,6 +682,32 @@ export default function App() {
                 <SkipIcon />
               </button>
             </div>
+
+            {/* Notifications toggle */}
+            <div className="flex items-center justify-center mt-2">
+              <label className={`flex items-center gap-2 cursor-pointer ${textMain}`}>
+                <input
+                  type="checkbox"
+                  checked={notifications}
+                  onChange={async (e) => {
+                    const on = e.target.checked;
+                    if (on) {
+                      if (!("Notification" in window)) {
+                        setNotifications(false);
+                        return;
+                      }
+                      const perm = await Notification.requestPermission();
+                      setNotifications(perm === "granted");
+                    } else {
+                      setNotifications(false);
+                    }
+                  }}
+                  className="accent-current"
+                  aria-label="Enable notifications"
+                />
+                <span className={`${label} text-[10px]`}>Notifications</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -482,15 +718,29 @@ export default function App() {
               <defs>
                 <filter id="ringGlow" x="-60%" y="-60%" width="220%" height="220%">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
-                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
                 </filter>
               </defs>
               <g transform={`translate(${CENTER}, ${CENTER}) rotate(-90)`}>
-                <circle r={R} cx={0} cy={0} stroke={isBreak ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.16)"} strokeWidth={STROKE} fill="none" />
+                <circle
+                  r={R}
+                  cx={0}
+                  cy={0}
+                  stroke={isBreak ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.16)"}
+                  strokeWidth={STROKE}
+                  fill="none"
+                />
                 <motion.circle
-                  r={R} cx={0} cy={0}
+                  r={R}
+                  cx={0}
+                  cy={0}
                   stroke={isBreak ? "rgba(0,0,0,0.96)" : "rgba(255,255,255,0.97)"}
-                  strokeWidth={STROKE} strokeLinecap="round" fill="none"
+                  strokeWidth={STROKE}
+                  strokeLinecap="round"
+                  fill="none"
                   filter="url(#ringGlow)"
                   strokeDasharray={`${CIRC * Math.max(0.001, fracRemaining)} ${CIRC}`}
                   animate={{ pathLength: Math.max(0.001, fracRemaining) }}
@@ -499,11 +749,8 @@ export default function App() {
               </g>
             </svg>
 
-            {/* MODE tag ABOVE time (higher now) */}
-            <div
-              className="absolute pointer-events-none"
-              style={{ left: "50%", top: "50%", transform: "translate(-50%, -60px)" }}
-            >
+            {/* MODE tag ABOVE time */}
+            <div className="absolute pointer-events-none" style={{ left: "50%", top: "50%", transform: "translate(-50%, -60px)" }}>
               <ModeTag mode={mode} isBreak={isBreak} />
             </div>
 
