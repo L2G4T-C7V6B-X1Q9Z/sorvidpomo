@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
+import FocusField from "./FocusField";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -735,8 +736,10 @@ export default function App() {
       {/* Base background */}
       <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000" }} />
 
-      {/* BREAK: blobs + grain overlay */}
-      <AnimatePresence>{isBreak && <BlobField key="sunset" />}</AnimatePresence>
+      {/* BACKGROUNDS */}
+      <AnimatePresence>
+        {isBreak ? <BlobField key="sunset" /> : <FocusField key="dust" />}
+      </AnimatePresence>
       {isBreak && (
         <div
           className="absolute inset-0 -z-10 pointer-events-none"
