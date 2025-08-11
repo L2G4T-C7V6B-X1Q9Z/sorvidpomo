@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
+import TaskList from "./TaskList";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -414,22 +415,36 @@ export default function App() {
 
   // Hide controls when idle and show on mouse movement
   const [idle, setIdle] = useState(false);
+  const [idleGuard, setIdleGuard] = useState(false);
   const idleTimeoutRef = useRef<number | null>(null);
-  useEffect(() => {
-    const reset = () => {
-      setIdle(false);
-      if (idleTimeoutRef.current !== null)
-        window.clearTimeout(idleTimeoutRef.current);
+
+  const resetIdle = () => {
+    setIdle(false);
+    if (idleTimeoutRef.current !== null)
+      window.clearTimeout(idleTimeoutRef.current);
+    if (!idleGuard)
       idleTimeoutRef.current = window.setTimeout(() => setIdle(true), 3000);
-    };
-    window.addEventListener("mousemove", reset);
-    reset();
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resetIdle);
+    resetIdle();
     return () => {
-      window.removeEventListener("mousemove", reset);
+      window.removeEventListener("mousemove", resetIdle);
       if (idleTimeoutRef.current !== null)
         window.clearTimeout(idleTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (idleGuard) {
+      setIdle(false);
+      if (idleTimeoutRef.current !== null)
+        window.clearTimeout(idleTimeoutRef.current);
+    } else {
+      resetIdle();
+    }
+  }, [idleGuard]);
 
   // --- Background chime reliability ---
   // Track absolute end time (ms) and whether we've already beeped for that timestamp.
@@ -708,6 +723,8 @@ export default function App() {
           }}
         />
       )}
+
+      <TaskList idle={idle} isBreak={isBreak} setIdleGuard={setIdleGuard} />
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
