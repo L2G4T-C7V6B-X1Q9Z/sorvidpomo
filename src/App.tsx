@@ -409,6 +409,25 @@ export default function App() {
     if (!notifications) clearNotifyTimer();
   }, [notifications]);
 
+  // Hide controls when idle and show on mouse movement
+  const [idle, setIdle] = useState(false);
+  const idleTimeoutRef = useRef<number | null>(null);
+  useEffect(() => {
+    const reset = () => {
+      setIdle(false);
+      if (idleTimeoutRef.current !== null)
+        window.clearTimeout(idleTimeoutRef.current);
+      idleTimeoutRef.current = window.setTimeout(() => setIdle(true), 3000);
+    };
+    window.addEventListener("mousemove", reset);
+    reset();
+    return () => {
+      window.removeEventListener("mousemove", reset);
+      if (idleTimeoutRef.current !== null)
+        window.clearTimeout(idleTimeoutRef.current);
+    };
+  }, []);
+
   // --- Background chime reliability ---
   // Track absolute end time (ms) and whether we've already beeped for that timestamp.
   const scheduledEndRef = useRef<number | null>(null);
@@ -628,48 +647,68 @@ export default function App() {
             </div>
 
             {/* Durations */}
-            <div className="flex items-end justify-center gap-3">
-              <div className="flex flex-col items-center shrink-0">
-                <label className={`${label} text-[10px] mb-1`}>Focus (min)</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={600}
-                  value={focusText}
-                  onChange={(e) => setFocusText(onlyDigits(e.target.value))}
-                  onBlur={() => setFocusText((v) => (v.trim() === "" ? "30" : normalizeMinutes(v, 30)))}
-                  className={inputCls}
-                  inputMode="numeric"
-                />
-              </div>
-              <div className="flex flex-col items-center shrink-0">
-                <label className={`${label} text-[10px] mb-1`}>Break (min)</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={600}
-                  value={breakText}
-                  onChange={(e) => setBreakText(onlyDigits(e.target.value))}
-                  onBlur={() => setBreakText((v) => (v.trim() === "" ? "5" : normalizeMinutes(v, 5)))}
-                  className={inputCls}
-                  inputMode="numeric"
-                />
-              </div>
-            </div>
+            <AnimatePresence initial={false}>
+              {!idle && (
+                <motion.div
+                  key="durations"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-end justify-center gap-3"
+                >
+                  <div className="flex flex-col items-center shrink-0">
+                    <label className={`${label} text-[10px] mb-1`}>Focus (min)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={focusText}
+                      onChange={(e) => setFocusText(onlyDigits(e.target.value))}
+                      onBlur={() =>
+                        setFocusText((v) => (v.trim() === "" ? "30" : normalizeMinutes(v, 30)))}
+                      className={inputCls}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div className="flex flex-col items-center shrink-0">
+                    <label className={`${label} text-[10px] mb-1`}>Break (min)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={breakText}
+                      onChange={(e) => setBreakText(onlyDigits(e.target.value))}
+                      onBlur={() =>
+                        setBreakText((v) => (v.trim() === "" ? "5" : normalizeMinutes(v, 5)))}
+                      className={inputCls}
+                      inputMode="numeric"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Buttons */}
             <div className="flex items-center justify-center gap-3">
-              <button
-                aria-label={isRunning ? "Pause" : "Play"}
-                onClick={playPause}
-                className={btnCls}
-                onMouseDown={sound.unlock}
-                onTouchStart={sound.unlock}
-                onMouseUp={blurTarget}
-                onKeyUp={blurTarget}
-              >
-                {isRunning ? <PauseIcon /> : <PlayIcon />}
-              </button>
+              <AnimatePresence initial={false}>
+                {!idle && (
+                  <motion.button
+                    key="playpause"
+                    aria-label={isRunning ? "Pause" : "Play"}
+                    onClick={playPause}
+                    className={btnCls}
+                    onMouseDown={sound.unlock}
+                    onTouchStart={sound.unlock}
+                    onMouseUp={blurTarget}
+                    onKeyUp={blurTarget}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    {isRunning ? <PauseIcon /> : <PlayIcon />}
+                  </motion.button>
+                )}
+              </AnimatePresence>
               <button
                 aria-label="Skip"
                 onClick={skip}
