@@ -1,21 +1,20 @@
-Tasks:
+Tasks
 
+Completed
+- [x] Background activity: sound and animations continue in background tabs
+- [x] +5 minutes button
+- [x] Play/pause control via space bar
+- [x] Auto-hide controls after inactivity
+- [x] Review app.tsx
 
-- [x] Add background continuous activity so that:
-	- [x] Sound continues playing in background tabs
-	- [x] Graphics/animations continue in background
-- [x] Add +5 minutes button
-- [x] Add play/pause control via space bar
-- [ ] Suraj suggests a research arm (data collection, location, timing, etc. need to flex out)
-- [ ] Inspired by Suraj, optimize button per certain settings, for example tailor a pomo session per the requirements of the study session
-- [ ] Focus black background subtle dot wave animation
-- [x] Auto hide controls after inactivity?
-- [ ] reorganize play/pause buttons, timer buttons
-- [ ] mobile app optimize
-- [ ] add more grain to possibly both focus/relax backgrounds
-- [ ] update sound to be less basic
-- [ ] session complete sounds need to be louder
-- [ ] sound control options (mute, volume)
-- [x] david: look at app.txx review it
-- [ ] create a joinable "pomo session"
-
+Planned
+- [ ] Research data collection options
+- [ ] Optimize timer presets for study sessions
+- [ ] Add subtle dot wave animation for focus background
+- [ ] Reorganize control layout
+- [ ] Improve mobile layout
+- [ ] Add more grain to focus and break backgrounds
+- [ ] Update sound design
+- [ ] Increase volume of session-complete sounds
+- [ ] Provide sound controls (mute, volume)
+- [ ] Create joinable "pomo session"
