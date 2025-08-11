@@ -614,6 +614,30 @@ export default function App() {
     setTimeBump((k) => k + 1);
   };
 
+  // Pause/play with space bar
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space" && e.key !== " ") return;
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "BUTTON" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+      }
+      if (e.repeat) return;
+      e.preventDefault();
+      playPause();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [playPause]);
+
   // theming
   const isBreak = mode === "break";
   const textMain = isBreak ? "text-black/90" : "text-white/90";
