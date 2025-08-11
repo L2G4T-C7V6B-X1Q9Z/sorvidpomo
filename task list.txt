@@ -10,7 +10,7 @@ Completed
 Planned
 - [ ] Research data collection options
 - [ ] Optimize timer presets for study sessions
-- [ ] Add subtle dot wave animation for focus background
+- [x] Add subtle dot wave animation for focus background
 - [ ] Reorganize control layout
 - [ ] Improve mobile layout
 - [ ] Add more grain to focus and break backgrounds
