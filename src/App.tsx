@@ -731,7 +731,7 @@ export default function App() {
   const showStoppedWarning = hasStarted && !isRunning;
 
   return (
-    <div className="relative" style={{ minHeight: "100vh" }}>
+    <div className={`relative${idle ? " cursor-none" : ""}`} style={{ minHeight: "100vh" }}>
       {/* Base background */}
       <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000" }} />
 
