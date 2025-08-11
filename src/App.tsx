@@ -869,7 +869,7 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 flex items-center text-[11px] text-red-500"
+                    className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 flex items-center whitespace-nowrap text-[13px] font-bold text-red-500"
                   >
                     <span className="mr-1">⚠</span>
                     <span>timer stopped.</span>
