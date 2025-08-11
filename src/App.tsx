@@ -829,7 +829,7 @@ export default function App() {
                   animate={{ opacity: idle ? 0 : 1 }}
                   transition={{ duration: 0.2 }}
                   style={{ pointerEvents: idle ? "none" : "auto" }}
-                  className="absolute right-0 top-full mt-1 flex flex-col items-end gap-1"
+                  className="absolute right-0 top-full mt-1 flex items-center gap-1"
                 >
                   <button
                     aria-label="Add 1 minute"
