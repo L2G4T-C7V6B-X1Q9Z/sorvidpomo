@@ -319,10 +319,22 @@ function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
                 key={key}
-                initial={isDigit ? { y: -6, opacity: 0 } : { opacity: 1 }}
-                animate={isDigit ? { y: 0, opacity: 1 } : { opacity: 1 }}
-                exit={isDigit ? { y: 6, opacity: 0 } : { opacity: 1 }}
-                transition={{ type: "spring", stiffness: 420, damping: 28 }}
+                initial={
+                  isDigit
+                    ? { opacity: 0, scale: 0.95 }
+                    : { opacity: 1 }
+                }
+                animate={
+                  isDigit
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 1 }
+                }
+                exit={
+                  isDigit
+                    ? { opacity: 0, scale: 1.05 }
+                    : { opacity: 1 }
+                }
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="absolute inset-0"
               >
                 {ch}
@@ -895,9 +907,9 @@ export default function App() {
               <div className="relative">
                 <motion.div
                   key={timeBump}
-                  initial={{ scale: 1.08 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 360, damping: 22 }}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
                   className="pointer-events-none"
                 >
                   <AnimatedTime value={remaining} dark={!isBreak} />
