@@ -397,7 +397,8 @@ export default function App() {
     try {
       const title = next === "focus" ? "Break finished" : "Focus finished";
       const body = next === "focus" ? "Time to focus." : "Time for a break.";
-      new Notification(title, { body });
+      const n = new Notification(title, { body, requireInteraction: true });
+      n.onclick = () => window.focus();
     } catch {}
   };
   const scheduleNotifyIn = (delaySec: number, next: Mode) => {
@@ -761,41 +762,45 @@ export default function App() {
               </button>
             </motion.div>
 
-            {/* Notifications toggle */}
-            <motion.div
-              animate={{ opacity: idle ? 0 : 1 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center justify-center mt-2"
-              style={{ pointerEvents: idle ? "none" : "auto" }}
-            >
-              <label className={`flex items-center gap-2 cursor-pointer ${textMain}`}>
-                <input
-                  type="checkbox"
-                  checked={notifications}
-                  onChange={async (e) => {
-                    const on = e.target.checked;
-                    if (on) {
-                      if (!("Notification" in window)) {
-                        setNotifications(false);
-                        return;
-                      }
-                      const perm = await Notification.requestPermission();
-                      setNotifications(perm === "granted");
-                    } else {
-                      setNotifications(false);
-                    }
-                  }}
-                  className="accent-current"
-                  aria-label="Enable notifications"
-                />
-                <span className={`${label} text-[10px]`}>Notifications</span>
-              </label>
-            </motion.div>
-          </div>
         </div>
+      </div>
 
-        {/* Dial center */}
-        <div className="absolute" style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
+      <motion.div
+        animate={{ opacity: idle ? 0 : 1 }}
+        transition={{ duration: 0.2 }}
+        className="absolute bottom-4 right-4"
+        style={{ pointerEvents: idle ? "none" : "auto" }}
+      >
+        <label className={`flex items-center gap-2 cursor-pointer ${textMain}`}>
+          <span className={`${label} text-[10px]`}>Notifications</span>
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={notifications}
+              onChange={async (e) => {
+                const on = e.target.checked;
+                if (on) {
+                  if (!("Notification" in window)) {
+                    setNotifications(false);
+                    return;
+                  }
+                  const perm = await Notification.requestPermission();
+                  setNotifications(perm === "granted");
+                } else {
+                  setNotifications(false);
+                }
+              }}
+              className="sr-only peer"
+              aria-label="Enable notifications"
+            />
+            <div className="w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors"></div>
+            <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+          </div>
+        </label>
+      </motion.div>
+
+      {/* Dial center */}
+      <div className="absolute" style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
           <div style={{ width: SIZE, height: SIZE }} className="relative select-none overflow-visible">
             <svg width={SIZE} height={SIZE} className="block overflow-visible">
               <defs>
