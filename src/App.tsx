@@ -296,6 +296,16 @@ const SkipIcon = ({ size = 16 }: { size?: number }) => (
     <path d="M7 6l8 6-8 6V6zm9 0h2v12h-2z" />
   </svg>
 );
+const FullscreenIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M7 7h3V5H5v5h2V7zm7-2v2h3v3h2V5h-5zm3 10h-3v2h5v-5h-2v3zm-7 3v-2H7v-3H5v5h5z" />
+  </svg>
+);
+const ExitFullscreenIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M16 14h3v5h-5v-2h3v-3zm-7 3v2H4v-5h2v3h3zm7-11h-3V4h5v5h-2V6zm-7 0V4H4v5h2V6h3z" />
+  </svg>
+);
 
 /* ===================== Animated time ===================== */
 function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
@@ -441,6 +451,30 @@ export default function App() {
       if (idleTimeoutRef.current !== null)
         window.clearTimeout(idleTimeoutRef.current);
     };
+  }, []);
+
+  // Fullscreen handling
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, []);
 
   // --- Background chime reliability ---
@@ -723,6 +757,16 @@ export default function App() {
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
+        <motion.button
+          aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
+          onClick={toggleFullscreen}
+          className={`absolute top-4 right-4 ${tinyBtnCls}`}
+          animate={{ opacity: idle ? 0 : 1 }}
+          transition={{ duration: 0.2 }}
+          style={{ pointerEvents: idle ? "none" : "auto" }}
+        >
+          {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+        </motion.button>
         <div className="absolute inset-x-0 text-center" style={{ top: controlsAnchorTop, transform: "translateY(-50%)" }}>
           <div className="relative mx-auto w-fit flex flex-col items-center gap-2">
             {/* Title */}
