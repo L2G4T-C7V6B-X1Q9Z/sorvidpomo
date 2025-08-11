@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
+import DotField from "./DotField";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -754,6 +755,9 @@ export default function App() {
           }}
         />
       )}
+
+      {/* FOCUS: dot field background */}
+      <AnimatePresence>{!isBreak && <DotField key="dots" />}</AnimatePresence>
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
