@@ -706,7 +706,14 @@ export default function App() {
           <div className="relative mx-auto w-fit flex flex-col items-center gap-2">
             {/* Title */}
             <div className={`-mb-1 ${textMain}`}>
-              <span className="text-3xl md:text-4xl font-extrabold tracking-tight">Pomodoro</span>
+              <a
+                href="https://github.com/l2g4t-c7v6b-x1q9z/sorvidpomo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-3xl md:text-4xl font-extrabold tracking-tight"
+              >
+                Pomodoro
+              </a>
             </div>
 
             {/* Durations */}
