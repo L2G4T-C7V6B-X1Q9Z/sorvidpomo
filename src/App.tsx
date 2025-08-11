@@ -854,20 +854,28 @@ export default function App() {
 
             {/* Warning + MODE tag ABOVE time */}
             <div
-              className="absolute pointer-events-none flex flex-col items-center gap-1"
+              className="absolute pointer-events-none"
               style={{
                 left: "50%",
                 top: "50%",
-                transform: `translate(-50%, ${showStoppedWarning ? "-72px" : "-60px"})`,
+                transform: "translate(-50%, -60px)",
               }}
             >
-              {showStoppedWarning && (
-                <div className="flex items-center text-[10px] text-red-500">
-                  <span className="mr-1">⚠</span>
-                  <span>timer stopped.</span>
-                </div>
-              )}
               <ModeTag mode={mode} isBreak={isBreak} />
+              <AnimatePresence>
+                {showStoppedWarning && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 flex items-center text-[11px] text-red-500"
+                  >
+                    <span className="mr-1">⚠</span>
+                    <span>timer stopped.</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Centered time and add buttons */}
