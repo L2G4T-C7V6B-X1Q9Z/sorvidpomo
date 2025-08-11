@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
+import SettingsDialog from "./components/SettingsDialog";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -385,6 +386,7 @@ export default function App() {
   // Notifications
   const [notifications, setNotifications] = useState(false);
   const notifyTimeoutRef = useRef<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const clearNotifyTimer = () => {
     if (notifyTimeoutRef.current !== null) {
       clearTimeout(notifyTimeoutRef.current);
@@ -706,6 +708,17 @@ export default function App() {
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
+        <button
+          aria-label="Open settings"
+          onClick={() => setShowSettings(true)}
+          className={`absolute top-4 right-4 ${tinyBtnCls}`}
+          onMouseDown={sound.unlock}
+          onTouchStart={sound.unlock}
+          onMouseUp={blurTarget}
+          onKeyUp={blurTarget}
+        >
+          ⚙
+        </button>
         <div className="absolute inset-x-0 text-center" style={{ top: controlsAnchorTop, transform: "translateY(-50%)" }}>
           <div className="relative mx-auto w-fit flex flex-col items-center gap-2">
             {/* Title */}
@@ -942,6 +955,7 @@ export default function App() {
           </div>
         </div>
       </div>
+      <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
