@@ -152,6 +152,7 @@ function BlobField({ count = 6 }: { count?: number }) {
   );
 }
 
+
 /* ===================== Clean Sounds ===================== */
 class SoundEngine {
   ctx: AudioContext | null = null;
@@ -378,6 +379,7 @@ export default function App() {
   const [pausedSec, setPausedSec] = useState(focusMin * 60);
   const [totalSec, setTotalSec] = useState(focusMin * 60);
   const [now, setNow] = useState(Date.now());
+  const [timeBump, setTimeBump] = useState(0);
 
   // Notifications
   const [notifications, setNotifications] = useState(false);
@@ -592,6 +594,26 @@ export default function App() {
 
   };
 
+  const addTime = (sec: number) => {
+    if (sec <= 0) return;
+    setTotalSec((t) => t + sec);
+    if (isRunning && endAt) {
+      const newEnd = endAt + sec * 1000;
+      const newRem = Math.max(0, (newEnd - Date.now()) / 1000);
+      setEndAt(newEnd);
+      sound.cancelScheduled();
+      sound.scheduleCompleteIn(newRem);
+      scheduledEndRef.current = newEnd;
+      beepedForRef.current = null;
+      scheduleBeepMarkIn(newRem);
+      clearNotifyTimer();
+      scheduleNotifyIn(newRem, mode === "focus" ? "break" : "focus");
+    } else if (!isRunning) {
+      setPausedSec((s) => s + sec);
+    }
+    setTimeBump((k) => k + 1);
+  };
+
   // theming
   const isBreak = mode === "break";
   const textMain = isBreak ? "text-black/90" : "text-white/90";
@@ -608,6 +630,7 @@ export default function App() {
   const surface = isBreak ? "bg-black/12 text-black backdrop-blur-md" : "bg-white/10 text-white backdrop-blur-md";
   const inputCls = `${CONTROL_W} ${CONTROL_H} leading-none rounded-xl px-2 text-center outline-none ${inputRing} ${surface} transition-colors`;
   const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
+  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
 
   // stack position
   const controlsAnchorTop = `calc(25vh - ${SIZE / 4}px)`;
@@ -790,9 +813,48 @@ export default function App() {
               <ModeTag mode={mode} isBreak={isBreak} />
             </div>
 
-            {/* Centered time */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-              <AnimatedTime value={remaining} dark={!isBreak} />
+            {/* Centered time and add buttons */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="relative">
+                <motion.div
+                  key={timeBump}
+                  initial={{ scale: 1.08 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 360, damping: 22 }}
+                  className="pointer-events-none"
+                >
+                  <AnimatedTime value={remaining} dark={!isBreak} />
+                </motion.div>
+                <motion.div
+                  animate={{ opacity: idle ? 0 : 1 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ pointerEvents: idle ? "none" : "auto" }}
+                  className="absolute right-0 top-full mt-1 flex items-center gap-1"
+                >
+                  <button
+                    aria-label="Add 1 minute"
+                    onClick={() => addTime(60)}
+                    className={tinyBtnCls}
+                    onMouseDown={sound.unlock}
+                    onTouchStart={sound.unlock}
+                    onMouseUp={blurTarget}
+                    onKeyUp={blurTarget}
+                  >
+                    +1
+                  </button>
+                  <button
+                    aria-label="Add 5 minutes"
+                    onClick={() => addTime(300)}
+                    className={tinyBtnCls}
+                    onMouseDown={sound.unlock}
+                    onTouchStart={sound.unlock}
+                    onMouseUp={blurTarget}
+                    onKeyUp={blurTarget}
+                  >
+                    +5
+                  </button>
+                </motion.div>
+              </div>
             </div>
           </div>
         </div>
