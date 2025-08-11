@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
+import TaskList from "./TaskList";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -708,6 +709,8 @@ export default function App() {
           }}
         />
       )}
+
+      <TaskList idle={idle} isBreak={isBreak} />
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
