@@ -532,6 +532,11 @@ export default function App() {
     }
   }, [remaining, isRunning, endAt, mode, focusMin, breakMin]);
 
+  useEffect(() => {
+    const modeLabel = mode === "focus" ? "Focus" : "Break";
+    document.title = `${fmt(remaining)} – ${modeLabel}`;
+  }, [remaining, mode]);
+
   // controls (no persistent focus on buttons)
   const blurTarget = (e: React.SyntheticEvent<HTMLButtonElement>) =>
     (e.currentTarget as HTMLButtonElement).blur();
