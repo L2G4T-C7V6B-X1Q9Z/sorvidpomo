@@ -409,6 +409,25 @@ export default function App() {
     if (!notifications) clearNotifyTimer();
   }, [notifications]);
 
+  // Hide controls when idle and show on mouse movement
+  const [idle, setIdle] = useState(false);
+  const idleTimeoutRef = useRef<number | null>(null);
+  useEffect(() => {
+    const reset = () => {
+      setIdle(false);
+      if (idleTimeoutRef.current !== null)
+        window.clearTimeout(idleTimeoutRef.current);
+      idleTimeoutRef.current = window.setTimeout(() => setIdle(true), 3000);
+    };
+    window.addEventListener("mousemove", reset);
+    reset();
+    return () => {
+      window.removeEventListener("mousemove", reset);
+      if (idleTimeoutRef.current !== null)
+        window.clearTimeout(idleTimeoutRef.current);
+    };
+  }, []);
+
   // --- Background chime reliability ---
   // Track absolute end time (ms) and whether we've already beeped for that timestamp.
   const scheduledEndRef = useRef<number | null>(null);
@@ -628,7 +647,12 @@ export default function App() {
             </div>
 
             {/* Durations */}
-            <div className="flex items-end justify-center gap-3">
+            <motion.div
+              animate={{ opacity: idle ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-end justify-center gap-3"
+              style={{ pointerEvents: idle ? "none" : "auto" }}
+            >
               <div className="flex flex-col items-center shrink-0">
                 <label className={`${label} text-[10px] mb-1`}>Focus (min)</label>
                 <input
@@ -637,7 +661,8 @@ export default function App() {
                   max={600}
                   value={focusText}
                   onChange={(e) => setFocusText(onlyDigits(e.target.value))}
-                  onBlur={() => setFocusText((v) => (v.trim() === "" ? "30" : normalizeMinutes(v, 30)))}
+                  onBlur={() =>
+                    setFocusText((v) => (v.trim() === "" ? "30" : normalizeMinutes(v, 30)))}
                   className={inputCls}
                   inputMode="numeric"
                 />
@@ -650,15 +675,21 @@ export default function App() {
                   max={600}
                   value={breakText}
                   onChange={(e) => setBreakText(onlyDigits(e.target.value))}
-                  onBlur={() => setBreakText((v) => (v.trim() === "" ? "5" : normalizeMinutes(v, 5)))}
+                  onBlur={() =>
+                    setBreakText((v) => (v.trim() === "" ? "5" : normalizeMinutes(v, 5)))}
                   className={inputCls}
                   inputMode="numeric"
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* Buttons */}
-            <div className="flex items-center justify-center gap-3">
+            <motion.div
+              animate={{ opacity: idle ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-center gap-3"
+              style={{ pointerEvents: idle ? "none" : "auto" }}
+            >
               <button
                 aria-label={isRunning ? "Pause" : "Play"}
                 onClick={playPause}
@@ -681,10 +712,15 @@ export default function App() {
               >
                 <SkipIcon />
               </button>
-            </div>
+            </motion.div>
 
             {/* Notifications toggle */}
-            <div className="flex items-center justify-center mt-2">
+            <motion.div
+              animate={{ opacity: idle ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-center mt-2"
+              style={{ pointerEvents: idle ? "none" : "auto" }}
+            >
               <label className={`flex items-center gap-2 cursor-pointer ${textMain}`}>
                 <input
                   type="checkbox"
@@ -707,7 +743,7 @@ export default function App() {
                 />
                 <span className={`${label} text-[10px]`}>Notifications</span>
               </label>
-            </div>
+            </motion.div>
           </div>
         </div>
 
