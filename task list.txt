@@ -17,4 +17,5 @@ Tasks:
 - [ ] session complete sounds need to be louder
 - [ ] sound control options (mute, volume)
 - [x] david: look at app.txx review it
+- [ ] create a joinable "pomo session"
 
