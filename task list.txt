@@ -6,11 +6,11 @@ Completed
 - [x] Play/pause control via space bar
 - [x] Auto-hide controls after inactivity
 - [x] Review app.tsx
+- [x] Add subtle dot wave animation for focus background
 
 Planned
 - [ ] Research data collection options
 - [ ] Optimize timer presets for study sessions
-- [ ] Add subtle dot wave animation for focus background
 - [ ] Reorganize control layout
 - [ ] Improve mobile layout
 - [ ] Add more grain to focus and break backgrounds
