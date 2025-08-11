@@ -416,17 +416,39 @@ export default function App() {
   // Hide controls when idle and show on mouse movement
   const [idle, setIdle] = useState(false);
   const idleTimeoutRef = useRef<number | null>(null);
+  const idlePausedRef = useRef(false);
+
+  const scheduleIdle = () => {
+    if (idlePausedRef.current) return;
+    if (idleTimeoutRef.current !== null)
+      window.clearTimeout(idleTimeoutRef.current);
+    idleTimeoutRef.current = window.setTimeout(() => setIdle(true), 3000);
+  };
+
+  const resetIdle = () => {
+    setIdle(false);
+    scheduleIdle();
+  };
+
+  const pauseIdle = () => {
+    idlePausedRef.current = true;
+    if (idleTimeoutRef.current !== null) {
+      window.clearTimeout(idleTimeoutRef.current);
+      idleTimeoutRef.current = null;
+    }
+    setIdle(false);
+  };
+
+  const resumeIdle = () => {
+    idlePausedRef.current = false;
+    scheduleIdle();
+  };
+
   useEffect(() => {
-    const reset = () => {
-      setIdle(false);
-      if (idleTimeoutRef.current !== null)
-        window.clearTimeout(idleTimeoutRef.current);
-      idleTimeoutRef.current = window.setTimeout(() => setIdle(true), 3000);
-    };
-    window.addEventListener("mousemove", reset);
-    reset();
+    window.addEventListener("mousemove", resetIdle);
+    scheduleIdle();
     return () => {
-      window.removeEventListener("mousemove", reset);
+      window.removeEventListener("mousemove", resetIdle);
       if (idleTimeoutRef.current !== null)
         window.clearTimeout(idleTimeoutRef.current);
     };
@@ -710,7 +732,12 @@ export default function App() {
         />
       )}
 
-      <TaskList idle={idle} isBreak={isBreak} />
+      <TaskList
+        idle={idle}
+        isBreak={isBreak}
+        pauseIdle={pauseIdle}
+        resumeIdle={resumeIdle}
+      />
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
