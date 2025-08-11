@@ -397,7 +397,9 @@ export default function App() {
     try {
       const title = next === "focus" ? "Break finished" : "Focus finished";
       const body = next === "focus" ? "Time to focus." : "Time for a break.";
-      new Notification(title, { body });
+      // keep the notification visible until the user interacts with it
+      const n = new Notification(title, { body, requireInteraction: true });
+      n.onclick = () => window.focus();
     } catch {}
   };
   const scheduleNotifyIn = (delaySec: number, next: Mode) => {
@@ -765,10 +767,11 @@ export default function App() {
             <motion.div
               animate={{ opacity: idle ? 0 : 1 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center justify-center mt-2"
+              className="fixed bottom-4 right-4 z-20"
               style={{ pointerEvents: idle ? "none" : "auto" }}
             >
               <label className={`flex items-center gap-2 cursor-pointer ${textMain}`}>
+                <span className={`${label} text-[10px]`}>Notifications</span>
                 <input
                   type="checkbox"
                   checked={notifications}
@@ -785,10 +788,10 @@ export default function App() {
                       setNotifications(false);
                     }
                   }}
-                  className="accent-current"
+                  className="sr-only peer"
                   aria-label="Enable notifications"
                 />
-                <span className={`${label} text-[10px]`}>Notifications</span>
+                <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-offset-2 peer-focus:ring-current peer-checked:bg-current relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
               </label>
             </motion.div>
           </div>
