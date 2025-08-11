@@ -660,7 +660,12 @@ export default function App() {
   const controlsAnchorTop = `calc(25vh - ${SIZE / 4}px)`;
 
   return (
-    <div className="relative" style={{ minHeight: "100vh" }}>
+    <motion.div
+      className="relative"
+      style={{ minHeight: "100vh" }}
+      animate={{ filter: isRunning ? "none" : "grayscale(1) blur(2px)", opacity: isRunning ? 1 : 0.6 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Base background */}
       <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000" }} />
 
@@ -883,6 +888,6 @@ export default function App() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
