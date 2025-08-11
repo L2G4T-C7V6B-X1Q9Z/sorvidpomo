@@ -874,13 +874,13 @@ export default function App() {
                   <button
                     aria-label="Reset timer"
                     onClick={resetTimer}
-                    className={tinyBtnCls}
+                    className={`${tinyBtnCls} [&>span]:rotate-[270deg] [&>span]:text-base inline-block`}
                     onMouseDown={sound.unlock}
                     onTouchStart={sound.unlock}
                     onMouseUp={blurTarget}
                     onKeyUp={blurTarget}
                   >
-                    ↺
+                    <span className="inline-block">↺</span>
                   </button>
                   <button
                     aria-label="Add 1 minute"
