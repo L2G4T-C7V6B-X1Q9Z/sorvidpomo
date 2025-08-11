@@ -375,6 +375,7 @@ export default function App() {
 
   // timing
   const [isRunning, setIsRunning] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [endAt, setEndAt] = useState<number | null>(null);
   const [pausedSec, setPausedSec] = useState(focusMin * 60);
   const [totalSec, setTotalSec] = useState(focusMin * 60);
@@ -539,6 +540,7 @@ export default function App() {
   const playPause = async () => {
     await sound.unlock();
     if (!isRunning) {
+      setHasStarted(true);
       // Robust remaining time: if previous endAt is stale/past, use pausedSec
       let rem: number;
       if (endAt && endAt > Date.now()) {
@@ -674,6 +676,8 @@ export default function App() {
 
   // stack position
   const controlsAnchorTop = `calc(25vh - ${SIZE / 4}px)`;
+
+  const showStoppedWarning = hasStarted && !isRunning;
 
   return (
     <div className="relative" style={{ minHeight: "100vh" }}>
@@ -848,8 +852,21 @@ export default function App() {
               </g>
             </svg>
 
-            {/* MODE tag ABOVE time */}
-            <div className="absolute pointer-events-none" style={{ left: "50%", top: "50%", transform: "translate(-50%, -60px)" }}>
+            {/* Warning + MODE tag ABOVE time */}
+            <div
+              className="absolute pointer-events-none flex flex-col items-center gap-1"
+              style={{
+                left: "50%",
+                top: "50%",
+                transform: `translate(-50%, ${showStoppedWarning ? "-72px" : "-60px"})`,
+              }}
+            >
+              {showStoppedWarning && (
+                <div className="flex items-center text-[10px] text-red-500">
+                  <span className="mr-1">⚠</span>
+                  <span>timer stopped.</span>
+                </div>
+              )}
               <ModeTag mode={mode} isBreak={isBreak} />
             </div>
 
