@@ -594,6 +594,22 @@ export default function App() {
 
   };
 
+  const resetTimer = () => {
+    const sec = (mode === "focus" ? focusMin : breakMin) * 60;
+    setIsRunning(false);
+    setEndAt(null);
+    setTotalSec(sec);
+    setPausedSec(sec);
+
+    sound.cancelScheduled();
+    scheduledEndRef.current = null;
+    beepedForRef.current = null;
+    clearBeepMark();
+    clearNotifyTimer();
+    lastKeyRef.current = `${mode}-${focusMin}-${breakMin}`;
+    setTimeBump((k) => k + 1);
+  };
+
   const addTime = (sec: number) => {
     if (sec <= 0) return;
     setTotalSec((t) => t + sec);
@@ -855,6 +871,17 @@ export default function App() {
                   style={{ pointerEvents: idle ? "none" : "auto" }}
                   className="absolute right-0 top-full mt-1 flex items-center gap-1"
                 >
+                  <button
+                    aria-label="Reset timer"
+                    onClick={resetTimer}
+                    className={tinyBtnCls}
+                    onMouseDown={sound.unlock}
+                    onTouchStart={sound.unlock}
+                    onMouseUp={blurTarget}
+                    onKeyUp={blurTarget}
+                  >
+                    ↺
+                  </button>
                   <button
                     aria-label="Add 1 minute"
                     onClick={() => addTime(60)}
