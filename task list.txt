@@ -1,12 +1,5 @@
 Tasks
 
-Completed
-- [x] Background activity: sound and animations continue in background tabs
-- [x] +5 minutes button
-- [x] Play/pause control via space bar
-- [x] Auto-hide controls after inactivity
-- [x] Review app.tsx
-
 Planned
 - [ ] Research data collection options
 - [ ] Optimize timer presets for study sessions
@@ -15,6 +8,23 @@ Planned
 - [ ] Improve mobile layout
 - [ ] Add more grain to focus and break backgrounds
 - [ ] Update sound design
+	- [ ] alarm sounds are too quiet, needs to go on for longer
 - [ ] Increase volume of session-complete sounds
 - [ ] Provide sound controls (mute, volume)
-- [ ] Create joinable "pomo session"
+- [ ] Create joinable "pomo session" 
+	- [ ] server type situation? create pomo rooms, 
+	- [ ] sync across agents 
+	- [ ] also create notifications that timer started, stopped, skipped
+	- [ ] server roster
+- [ ] notifications button needs to work, across devices - mac/windows/android/iphone
+- [ ] full screen button bugged. pressing F works
+
+
+
+
+Completed
+- [x] Background activity: sound and animations continue in background tabs
+- [x] +5 minutes button
+- [x] Play/pause control via space bar
+- [x] Auto-hide controls after inactivity
+- [x] Review app.tsx
