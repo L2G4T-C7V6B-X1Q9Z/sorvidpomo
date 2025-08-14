@@ -19,6 +19,7 @@ Planned
 - [ ] notifications button needs to work, across devices - mac/windows/android/iphone
 - [ ] full screen button bugged. pressing F works
 - [ ] computational optimiaztion for graphics. will need to play with it. consider task list
+- [ ] create mac app version to run and sync w sessions, instead of a web app version
 
 
 
