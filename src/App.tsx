@@ -384,7 +384,59 @@ function ModeTag({ mode, isBreak }: { mode: "focus" | "break"; isBreak: boolean 
 /* ===================== App ===================== */
 type Mode = "focus" | "break";
 
+// Cross-browser Fullscreen helpers (with older WebKit/MS fallbacks)
+function fsElement(): Element | null {
+  const doc: any = document as any;
+  return (
+    document.fullscreenElement ||
+    doc.webkitFullscreenElement ||
+    doc.msFullscreenElement ||
+    null
+  );
+}
+function canFS(): boolean {
+  const doc: any = document as any;
+  return Boolean(
+    document.fullscreenEnabled ||
+      doc.webkitFullscreenEnabled ||
+      doc.msFullscreenEnabled
+  );
+}
+function requestFS(el: Element): Promise<void> | void {
+  const anyEl: any = el as any;
+  if (anyEl.requestFullscreen) return anyEl.requestFullscreen();
+  if (anyEl.webkitRequestFullscreen) return anyEl.webkitRequestFullscreen(); // modern Safari
+  if (anyEl.webkitRequestFullScreen) return anyEl.webkitRequestFullScreen(); // older Safari
+  if (anyEl.msRequestFullscreen) return anyEl.msRequestFullscreen();
+}
+function exitFS(): Promise<void> | void {
+  const anyDoc: any = document as any;
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (anyDoc.webkitExitFullscreen) return anyDoc.webkitExitFullscreen();
+  if (anyDoc.webkitCancelFullScreen) return anyDoc.webkitCancelFullScreen(); // older Safari
+  if (anyDoc.msExitFullscreen) return anyDoc.msExitFullscreen();
+}
+
 export default function App() {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // --- CSS-based fallback fullscreen (for iframe/iOS/denied cases) ---
+  const [isFakeFS, setIsFakeFS] = useState(false);
+  const fakeFSRef = useRef(false);
+  useEffect(() => { fakeFSRef.current = isFakeFS; }, [isFakeFS]);
+  const enableFakeFS = () => {
+    setIsFakeFS(true);
+    try {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    } catch {}
+  };
+  const disableFakeFS = () => {
+    setIsFakeFS(false);
+    try {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    } catch {}
+  };
   // durations
   const [focusText, setFocusText] = useState("30");
   const [breakText, setBreakText] = useState("5");
@@ -420,7 +472,13 @@ export default function App() {
     try {
       const title = next === "focus" ? "Break finished" : "Focus finished";
       const body = next === "focus" ? "Time to focus." : "Time for a break.";
-      new Notification(title, { body });
+      // Use a sticky-like notification (ignored by some browsers), and tag to avoid stacking
+      new Notification(title, {
+        body,
+        tag: "sorvidpomo-timer",
+        renotify: true,
+        requireInteraction: true,
+      });
     } catch {}
   };
   const scheduleNotifyIn = (delaySec: number, next: Mode) => {
@@ -433,6 +491,19 @@ export default function App() {
   useEffect(() => {
     if (!notifications) clearNotifyTimer();
   }, [notifications]);
+  useEffect(() => {
+    // Keep desktop notification aligned with current timer state
+    if (!("Notification" in window)) return;
+    if (!notifications) {
+      clearNotifyTimer();
+      return;
+    }
+    if (Notification.permission !== "granted") return;
+    if (isRunning && endAt) {
+      const rem = Math.max(0, (endAt - Date.now()) / 1000);
+      scheduleNotifyIn(rem, mode === "focus" ? "break" : "focus");
+    }
+  }, [notifications, isRunning, endAt, mode]);
 
   // Hide controls when idle and show on mouse movement
   const [idle, setIdle] = useState(false);
@@ -456,16 +527,53 @@ export default function App() {
   // Fullscreen handling
   const [isFullscreen, setIsFullscreen] = useState(false);
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
+    const el = rootRef.current || document.documentElement;
+    // If real FS element is present, exit it; otherwise try to enter
+    if (fsElement()) {
+      try {
+        const p = exitFS();
+        if (p && typeof (p as Promise<void>).then === "function") (p as Promise<void>).catch(() => {});
+      } catch {}
+      // Also turn off fake FS if somehow both are on
+      if (fakeFSRef.current) disableFakeFS();
+      return;
     }
+
+    // Try real fullscreen first when supported
+    if (canFS()) {
+      try {
+        const p = requestFS(el!);
+        if (p && typeof (p as Promise<void>).then === "function") {
+          (p as Promise<void>).catch(() => {
+            // Rejected (often due to iframe without allowfullscreen) -> fallback
+            enableFakeFS();
+          });
+        }
+        return;
+      } catch {
+        enableFakeFS();
+        return;
+      }
+    }
+
+    // No support -> fallback
+    enableFakeFS();
   }, []);
   useEffect(() => {
-    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
+    const sync = () => setIsFullscreen(Boolean(fsElement()) || fakeFSRef.current);
+    const onError = sync;
+    document.addEventListener("fullscreenchange", sync);
+    document.addEventListener("webkitfullscreenchange", sync as any);
+    document.addEventListener("msfullscreenchange", sync as any);
+    document.addEventListener("fullscreenerror", onError as any);
+    // Initial sync
+    sync();
+    return () => {
+      document.removeEventListener("fullscreenchange", sync);
+      document.removeEventListener("webkitfullscreenchange", sync as any);
+      document.removeEventListener("msfullscreenchange", sync as any);
+      document.removeEventListener("fullscreenerror", onError as any);
+    };
   }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -476,8 +584,9 @@ export default function App() {
       if (key === "f") {
         e.preventDefault();
         toggleFullscreen();
-      } else if (key === "escape" && document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
+      } else if (key === "escape" && (fsElement() || fakeFSRef.current)) {
+        if (fsElement()) exitFS();
+        if (fakeFSRef.current) disableFakeFS();
       }
     };
     document.addEventListener("keydown", onKey);
@@ -738,7 +847,16 @@ export default function App() {
   const showStoppedWarning = hasStarted && !isRunning;
 
   return (
-    <div className={`relative${idle ? " cursor-none" : ""}`} style={{ minHeight: "100vh" }}>
+    <div
+      ref={rootRef}
+      className={`relative${idle ? " cursor-none" : ""}`}
+      style={{
+        minHeight: "100vh",
+        ...(isFakeFS
+          ? { position: "fixed", inset: 0, width: "100vw", height: "100vh", zIndex: 9999 }
+          : null),
+      }}
+    >
       {/* Base background */}
       <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000" }} />
 
@@ -763,14 +881,20 @@ export default function App() {
       )}
 
       {/* Controls */}
-      <div className="fixed inset-0 z-10">
+      <div className="fixed inset-0 z-50">
         <motion.button
+          type="button"
+          title={isFullscreen ? "Exit full screen (Esc)" : "Full screen (F)"}
           aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
           onClick={toggleFullscreen}
-          className={`absolute top-4 right-4 ${tinyBtnCls}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={
+            "absolute top-4 right-4 z-[1000] rounded-lg w-8 h-8 flex items-center justify-center select-none " +
+            "bg-black/80 text-white shadow-sm transition-all duration-150 ease-out active:scale-95 " +
+            "hover:bg-gray-200 hover:text-black hover:shadow-lg hover:shadow-black/10 hover:ring-2 hover:ring-black/20 focus:outline-none"
+          }
           animate={{ opacity: idle ? 0 : 1 }}
           transition={{ duration: 0.2 }}
-          style={{ pointerEvents: idle ? "none" : "auto" }}
         >
           {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
         </motion.button>
@@ -875,9 +999,21 @@ export default function App() {
                         return;
                       }
                       const perm = await Notification.requestPermission();
-                      setNotifications(perm === "granted");
+                      const ok = perm === "granted";
+                      setNotifications(ok);
+                      if (ok) {
+                        try {
+                          new Notification("Notifications enabled", {
+                            body: "You'll get an alert when the timer ends.",
+                            tag: "sorvidpomo-enabled",
+                            renotify: false,
+                          });
+                        } catch {}
+                        // The effect added above will (re)schedule the end notification if a session is running
+                      }
                     } else {
                       setNotifications(false);
+                      clearNotifyTimer();
                     }
                   }}
                   className="accent-current"
