@@ -386,10 +386,24 @@ type Mode = "focus" | "break";
 
 export default function App() {
   // durations
-  const [focusText, setFocusText] = useState("30");
-  const [breakText, setBreakText] = useState("5");
+  const [focusText, setFocusText] = useState(() => {
+    const saved = localStorage.getItem("focusMinutes");
+    return saved ? normalizeMinutes(saved, 30) : "30";
+  });
+  const [breakText, setBreakText] = useState(() => {
+    const saved = localStorage.getItem("breakMinutes");
+    return saved ? normalizeMinutes(saved, 5) : "5";
+  });
   const focusMin = parseInt(focusText, 10) || 30;
   const breakMin = parseInt(breakText, 10) || 5;
+
+  useEffect(() => {
+    localStorage.setItem("focusMinutes", String(focusMin));
+  }, [focusMin]);
+
+  useEffect(() => {
+    localStorage.setItem("breakMinutes", String(breakMin));
+  }, [breakMin]);
 
   // mode/cycle
   const [mode, setMode] = useState<Mode>("focus");
@@ -405,7 +419,7 @@ export default function App() {
   const [timeBump, setTimeBump] = useState(0);
 
   // Notifications
-  const [notifications, setNotifications] = useState(false);
+  const [notifications, setNotifications] = useState(() => localStorage.getItem("notifications") === "true");
   const notifyTimeoutRef = useRef<number | null>(null);
   const clearNotifyTimer = () => {
     if (notifyTimeoutRef.current !== null) {
@@ -432,6 +446,10 @@ export default function App() {
   };
   useEffect(() => {
     if (!notifications) clearNotifyTimer();
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem("notifications", notifications ? "true" : "false");
   }, [notifications]);
 
   // Hide controls when idle and show on mouse movement
