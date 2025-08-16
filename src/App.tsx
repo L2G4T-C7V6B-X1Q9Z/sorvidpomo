@@ -243,29 +243,31 @@ class SoundEngine {
         peak: 0.55,
       });
     if (kind === "click")
-      this.blip(1600, {
-        type: "square",
-        attack: 0.001,
-        decay: 0.02,
-        release: 0.01,
-        peak: 0.25,
-        lpf: 2000,
+      this.blip(600, {
+        type: "sine",
+        attack: 0.002,
+        decay: 0.05,
+        release: 0.02,
+        peak: 0.15,
+        lpf: 1500,
       });
     if (kind === "complete") {
       // Fallback chime pattern (used only when needed)
       const a = 660;
-      [a, a * 1.25, a * 1.5, a * 2].forEach((f, i) =>
-        setTimeout(
-          () =>
-            this.blip(f, {
-              type: "sine",
-              decay: 0.2,
-              release: 0.2,
-              peak: 0.9,
-            }),
-          i * 150
-        )
-      );
+      const seq = [a, a * 1.25, a * 1.5, a * 2];
+      for (let r = 0; r < 3; r++)
+        seq.forEach((f, i) =>
+          setTimeout(
+            () =>
+              this.blip(f, {
+                type: "sine",
+                decay: 0.2,
+                release: 0.2,
+                peak: 0.9,
+              }),
+            r * 600 + i * 150
+          )
+        );
     }
   }
 
@@ -286,28 +288,29 @@ class SoundEngine {
     this.cancelScheduled();
     const t0 = this.ctx.currentTime + Math.max(0, delaySec);
     const freqs = [660, 660 * 1.25, 660 * 1.5, 660 * 2];
-    freqs.forEach((f, i) => {
-      const start = t0 + i * 0.15;
-      const osc = this.ctx!.createOscillator();
-      const g = this.ctx!.createGain();
-      const lp = this.ctx!.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.value = 9000;
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(f, start);
-      g.gain.setValueAtTime(0, start);
-      g.gain.linearRampToValueAtTime(0.9, start + 0.004);
-      g.gain.exponentialRampToValueAtTime(
-        Math.max(1e-4, 0.0005),
-        start + 0.004 + 0.2 + 0.2
-      );
-      osc.connect(lp);
-      lp.connect(g);
-      g.connect(this.master!);
-      osc.start(start);
-      osc.stop(start + 0.004 + 0.2 + 0.2 + 0.02);
-      this.scheduled.push(osc);
-    });
+    for (let r = 0; r < 3; r++)
+      freqs.forEach((f, i) => {
+        const start = t0 + r * 0.6 + i * 0.15;
+        const osc = this.ctx!.createOscillator();
+        const g = this.ctx!.createGain();
+        const lp = this.ctx!.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 9000;
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, start);
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.9, start + 0.004);
+        g.gain.exponentialRampToValueAtTime(
+          Math.max(1e-4, 0.0005),
+          start + 0.004 + 0.2 + 0.2
+        );
+        osc.connect(lp);
+        lp.connect(g);
+        g.connect(this.master!);
+        osc.start(start);
+        osc.stop(start + 0.004 + 0.2 + 0.2 + 0.02);
+        this.scheduled.push(osc);
+      });
   };
 }
 const sound = new SoundEngine();
@@ -589,8 +592,8 @@ export default function App() {
         sound.play("complete");
         beepedForRef.current = scheduledEndRef.current;
       }
-      sound.cancelScheduled();
-      sound.scheduleCompleteIn(nt);
+      // allow alarm to finish before scheduling the next chime
+      setTimeout(() => sound.scheduleCompleteIn(nt), 2400);
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(nt);
