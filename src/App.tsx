@@ -291,6 +291,31 @@ class SoundEngine {
     this.cancelScheduled();
     this.nextMode = nextMode;
     const t0 = this.ctx.currentTime + Math.max(0, delaySec);
+    // gentle ticks for the final 5 seconds before a mode switch
+    for (let i = 5; i >= 1; i--) {
+      const start = t0 - i;
+      if (start > this.ctx.currentTime) {
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        const lp = this.ctx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 2000;
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1000, start);
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.08, start + 0.004);
+        g.gain.exponentialRampToValueAtTime(
+          Math.max(1e-4, 0.001),
+          start + 0.05
+        );
+        osc.connect(lp);
+        lp.connect(g);
+        g.connect(this.master!);
+        osc.start(start);
+        osc.stop(start + 0.06);
+        this.scheduled.push(osc);
+      }
+    }
     const asc = [660, 660 * 1.25, 660 * 1.5, 660 * 2, 660 * 1.5, 660 * 1.25, 660];
     const freqs = nextMode === "focus" ? asc.slice().reverse() : asc;
     const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
@@ -599,7 +624,10 @@ export default function App() {
       }
       // allow alarm to finish before scheduling the next chime
       const nextNext: Mode = next === "focus" ? "break" : "focus";
-      setTimeout(() => sound.scheduleCompleteIn(nt, nextNext), 2400);
+      setTimeout(
+        () => sound.scheduleCompleteIn(Math.max(0, nt - 2.4), nextNext),
+        2400
+      );
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(nt);
