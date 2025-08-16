@@ -227,15 +227,44 @@ class SoundEngine {
   chord(freqs: number[], opts: Parameters<SoundEngine["blip"]>[1]) {
     freqs.forEach((f, i) => this.blip(f, { ...opts, peak: (opts?.peak ?? 0.8) * (i ? 0.7 : 1) }));
   }
-  play(kind: "start" | "pause" | "skip" | "complete") {
-    if (kind === "start") this.chord([520, 780], { attack: 0.004, decay: 0.11, release: 0.07, sweep: 14 });
-    if (kind === "pause") this.blip(420, { type: "sine", decay: 0.12, release: 0.06, sweep: -18 });
-    if (kind === "skip") this.blip(600, { type: "triangle", attack: 0.0015, decay: 0.07, release: 0.03, sweep: -10, lpf: 5200, peak: 0.55 });
+  play(kind: "start" | "pause" | "skip" | "complete" | "click") {
+    if (kind === "start")
+      this.chord([520, 780], { attack: 0.004, decay: 0.11, release: 0.07, sweep: 14 });
+    if (kind === "pause")
+      this.blip(420, { type: "sine", decay: 0.12, release: 0.06, sweep: -18 });
+    if (kind === "skip")
+      this.blip(600, {
+        type: "triangle",
+        attack: 0.0015,
+        decay: 0.07,
+        release: 0.03,
+        sweep: -10,
+        lpf: 5200,
+        peak: 0.55,
+      });
+    if (kind === "click")
+      this.blip(1600, {
+        type: "square",
+        attack: 0.001,
+        decay: 0.02,
+        release: 0.01,
+        peak: 0.25,
+        lpf: 2000,
+      });
     if (kind === "complete") {
       // Fallback chime pattern (used only when needed)
-      const a = 440;
-      [a, a * 1.25, a * 1.5].forEach((f, i) =>
-        setTimeout(() => this.blip(f, { type: "sine", decay: 0.12, release: 0.1, peak: 0.85 }), i * 70)
+      const a = 660;
+      [a, a * 1.25, a * 1.5, a * 2].forEach((f, i) =>
+        setTimeout(
+          () =>
+            this.blip(f, {
+              type: "sine",
+              decay: 0.2,
+              release: 0.2,
+              peak: 0.9,
+            }),
+          i * 150
+        )
       );
     }
   }
@@ -256,9 +285,9 @@ class SoundEngine {
     if (!this.ctx || !this.master) return;
     this.cancelScheduled();
     const t0 = this.ctx.currentTime + Math.max(0, delaySec);
-    const freqs = [440, 440 * 1.25, 440 * 1.5];
+    const freqs = [660, 660 * 1.25, 660 * 1.5, 660 * 2];
     freqs.forEach((f, i) => {
-      const start = t0 + i * 0.07;
+      const start = t0 + i * 0.15;
       const osc = this.ctx!.createOscillator();
       const g = this.ctx!.createGain();
       const lp = this.ctx!.createBiquadFilter();
@@ -267,13 +296,16 @@ class SoundEngine {
       osc.type = "sine";
       osc.frequency.setValueAtTime(f, start);
       g.gain.setValueAtTime(0, start);
-      g.gain.linearRampToValueAtTime(0.85, start + 0.004);
-      g.gain.exponentialRampToValueAtTime(Math.max(1e-4, 0.0005), start + 0.004 + 0.12 + 0.1);
+      g.gain.linearRampToValueAtTime(0.9, start + 0.004);
+      g.gain.exponentialRampToValueAtTime(
+        Math.max(1e-4, 0.0005),
+        start + 0.004 + 0.2 + 0.2
+      );
       osc.connect(lp);
       lp.connect(g);
       g.connect(this.master!);
       osc.start(start);
-      osc.stop(start + 0.004 + 0.12 + 0.1 + 0.02);
+      osc.stop(start + 0.004 + 0.2 + 0.2 + 0.02);
       this.scheduled.push(osc);
     });
   };
@@ -417,41 +449,6 @@ export default function App() {
   const [totalSec, setTotalSec] = useState(focusMin * 60);
   const [now, setNow] = useState(Date.now());
   const [timeBump, setTimeBump] = useState(0);
-
-  // Notifications
-  const [notifications, setNotifications] = useState(() => localStorage.getItem("notifications") === "true");
-  const notifyTimeoutRef = useRef<number | null>(null);
-  const clearNotifyTimer = () => {
-    if (notifyTimeoutRef.current !== null) {
-      clearTimeout(notifyTimeoutRef.current);
-      notifyTimeoutRef.current = null;
-    }
-  };
-  const notifyNow = (next: Mode) => {
-    if (!notifications) return;
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
-    try {
-      const title = next === "focus" ? "Break finished" : "Focus finished";
-      const body = next === "focus" ? "Time to focus." : "Time for a break.";
-      new Notification(title, { body });
-    } catch {}
-  };
-  const scheduleNotifyIn = (delaySec: number, next: Mode) => {
-    if (!notifications) return;
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
-    clearNotifyTimer();
-    notifyTimeoutRef.current = window.setTimeout(() => notifyNow(next), Math.max(0, delaySec) * 1000);
-  };
-  useEffect(() => {
-    if (!notifications) clearNotifyTimer();
-  }, [notifications]);
-
-  useEffect(() => {
-    localStorage.setItem("notifications", notifications ? "true" : "false");
-  }, [notifications]);
-
   // Hide controls when idle and show on mouse movement
   const [idle, setIdle] = useState(false);
   const idleTimeoutRef = useRef<number | null>(null);
@@ -474,6 +471,7 @@ export default function App() {
   // Fullscreen handling
   const [isFullscreen, setIsFullscreen] = useState(false);
   const toggleFullscreen = useCallback(() => {
+    sound.unlock().then(() => sound.play("click"));
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
     } else {
@@ -585,8 +583,7 @@ export default function App() {
       setEndAt(newEnd);
       setNow(newEnd - nt * 1000);
 
-      // notify + ensure completion chime even if tab was hidden/suspended
-      notifyNow(next);
+      // ensure completion chime even if tab was hidden/suspended
       if (scheduledEndRef.current && beepedForRef.current !== scheduledEndRef.current) {
         // fallback chime if scheduled WebAudio didn’t fire while hidden
         sound.play("complete");
@@ -597,8 +594,6 @@ export default function App() {
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(nt);
-      clearNotifyTimer();
-      scheduleNotifyIn(nt, next === "focus" ? "break" : "focus");
 
       lastKeyRef.current = `${next}-${focusMin}-${breakMin}`;
     }
@@ -615,6 +610,7 @@ export default function App() {
 
   const playPause = async () => {
     await sound.unlock();
+    sound.play("click");
     if (!isRunning) {
       setHasStarted(true);
       // Robust remaining time: if previous endAt is stale/past, use pausedSec
@@ -636,8 +632,6 @@ export default function App() {
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(rem);
-      clearNotifyTimer();
-      scheduleNotifyIn(rem, next);
 
     } else {
       const rem = Math.max(0, endAt ? (endAt - Date.now()) / 1000 : pausedSec);
@@ -649,13 +643,13 @@ export default function App() {
       scheduledEndRef.current = null;
       beepedForRef.current = null;
       clearBeepMark();
-      clearNotifyTimer();
 
     }
   };
 
   const skip = async () => {
     await sound.unlock();
+    sound.play("click");
     const next: Mode = mode === "focus" ? "break" : "focus";
     const sec = (next === "focus" ? focusMin : breakMin) * 60;
     setMode(next);
@@ -668,11 +662,11 @@ export default function App() {
     scheduledEndRef.current = null;
     beepedForRef.current = null;
     clearBeepMark();
-    clearNotifyTimer();
 
   };
 
   const resetTimer = () => {
+    sound.play("click");
     const sec = (mode === "focus" ? focusMin : breakMin) * 60;
     setIsRunning(false);
     setEndAt(null);
@@ -683,13 +677,13 @@ export default function App() {
     scheduledEndRef.current = null;
     beepedForRef.current = null;
     clearBeepMark();
-    clearNotifyTimer();
     lastKeyRef.current = `${mode}-${focusMin}-${breakMin}`;
     setTimeBump((k) => k + 1);
   };
 
   const addTime = (sec: number) => {
     if (sec <= 0) return;
+    sound.play("click");
     setTotalSec((t) => t + sec);
     if (isRunning && endAt) {
       const newEnd = endAt + sec * 1000;
@@ -700,8 +694,6 @@ export default function App() {
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(newRem);
-      clearNotifyTimer();
-      scheduleNotifyIn(newRem, mode === "focus" ? "break" : "focus");
     } else if (!isRunning) {
       setPausedSec((s) => s + sec);
     }
@@ -789,6 +781,8 @@ export default function App() {
           animate={{ opacity: idle ? 0 : 1 }}
           transition={{ duration: 0.2 }}
           style={{ pointerEvents: idle ? "none" : "auto" }}
+          onMouseDown={sound.unlock}
+          onTouchStart={sound.unlock}
         >
           {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
         </motion.button>
@@ -874,36 +868,6 @@ export default function App() {
               </button>
             </motion.div>
 
-            {/* Notifications toggle */}
-            <motion.div
-              animate={{ opacity: idle ? 0 : 1 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center justify-center mt-2"
-              style={{ pointerEvents: idle ? "none" : "auto" }}
-            >
-              <label className={`flex items-center gap-2 cursor-pointer ${textMain}`}>
-                <input
-                  type="checkbox"
-                  checked={notifications}
-                  onChange={async (e) => {
-                    const on = e.target.checked;
-                    if (on) {
-                      if (!("Notification" in window)) {
-                        setNotifications(false);
-                        return;
-                      }
-                      const perm = await Notification.requestPermission();
-                      setNotifications(perm === "granted");
-                    } else {
-                      setNotifications(false);
-                    }
-                  }}
-                  className="accent-current"
-                  aria-label="Enable notifications"
-                />
-                <span className={`${label} text-[10px]`}>Notifications</span>
-              </label>
-            </motion.div>
           </div>
         </div>
 
