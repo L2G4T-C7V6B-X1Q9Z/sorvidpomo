@@ -254,20 +254,21 @@ class SoundEngine {
     if (kind === "complete") {
       // Fallback chime pattern (used only when needed)
       const a = 660;
-      const seq = [a, a * 1.25, a * 1.5, a * 2];
-      for (let r = 0; r < 3; r++)
-        seq.forEach((f, i) =>
-          setTimeout(
-            () =>
-              this.blip(f, {
-                type: "sine",
-                decay: 0.2,
-                release: 0.2,
-                peak: 0.9,
-              }),
-            r * 600 + i * 150
-          )
-        );
+      const asc = [a, a * 1.25, a * 1.5, a * 2, a * 1.5, a * 1.25, a];
+      const freqs = this.nextMode === "focus" ? asc.slice().reverse() : asc;
+      const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
+      freqs.forEach((f, i) =>
+        setTimeout(
+          () =>
+            this.blip(f, {
+              type: "sine",
+              decay: 0.15,
+              release: 0.15,
+              peak: peaks[i],
+            }),
+          i * 180
+        )
+      );
     }
   }
 
@@ -282,35 +283,39 @@ class SoundEngine {
     }
   };
 
-  scheduleCompleteIn = (delaySec: number) => {
+  nextMode: Mode = "break";
+
+  scheduleCompleteIn = (delaySec: number, nextMode: Mode) => {
     this.ensure();
     if (!this.ctx || !this.master) return;
     this.cancelScheduled();
+    this.nextMode = nextMode;
     const t0 = this.ctx.currentTime + Math.max(0, delaySec);
-    const freqs = [660, 660 * 1.25, 660 * 1.5, 660 * 2];
-    for (let r = 0; r < 3; r++)
-      freqs.forEach((f, i) => {
-        const start = t0 + r * 0.6 + i * 0.15;
-        const osc = this.ctx!.createOscillator();
-        const g = this.ctx!.createGain();
-        const lp = this.ctx!.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 9000;
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(f, start);
-        g.gain.setValueAtTime(0, start);
-        g.gain.linearRampToValueAtTime(0.9, start + 0.004);
-        g.gain.exponentialRampToValueAtTime(
-          Math.max(1e-4, 0.0005),
-          start + 0.004 + 0.2 + 0.2
-        );
-        osc.connect(lp);
-        lp.connect(g);
-        g.connect(this.master!);
-        osc.start(start);
-        osc.stop(start + 0.004 + 0.2 + 0.2 + 0.02);
-        this.scheduled.push(osc);
-      });
+    const asc = [660, 660 * 1.25, 660 * 1.5, 660 * 2, 660 * 1.5, 660 * 1.25, 660];
+    const freqs = nextMode === "focus" ? asc.slice().reverse() : asc;
+    const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
+    freqs.forEach((f, i) => {
+      const start = t0 + i * 0.18;
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      const lp = this.ctx!.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 9000;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f, start);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(peaks[i], start + 0.004);
+      g.gain.exponentialRampToValueAtTime(
+        Math.max(1e-4, 0.0005),
+        start + 0.004 + 0.15 + 0.15
+      );
+      osc.connect(lp);
+      lp.connect(g);
+      g.connect(this.master!);
+      osc.start(start);
+      osc.stop(start + 0.004 + 0.15 + 0.15 + 0.02);
+      this.scheduled.push(osc);
+    });
   };
 }
 const sound = new SoundEngine();
@@ -593,7 +598,8 @@ export default function App() {
         beepedForRef.current = scheduledEndRef.current;
       }
       // allow alarm to finish before scheduling the next chime
-      setTimeout(() => sound.scheduleCompleteIn(nt), 2400);
+      const nextNext: Mode = next === "focus" ? "break" : "focus";
+      setTimeout(() => sound.scheduleCompleteIn(nt, nextNext), 2400);
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(nt);
@@ -631,7 +637,7 @@ export default function App() {
 
       const next: Mode = mode === "focus" ? "break" : "focus";
       sound.cancelScheduled();
-      sound.scheduleCompleteIn(rem);
+      sound.scheduleCompleteIn(rem, next);
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(rem);
@@ -692,8 +698,9 @@ export default function App() {
       const newEnd = endAt + sec * 1000;
       const newRem = Math.max(0, (newEnd - Date.now()) / 1000);
       setEndAt(newEnd);
+      const next: Mode = mode === "focus" ? "break" : "focus";
       sound.cancelScheduled();
-      sound.scheduleCompleteIn(newRem);
+      sound.scheduleCompleteIn(newRem, next);
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(newRem);
