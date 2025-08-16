@@ -254,8 +254,10 @@ class SoundEngine {
     if (kind === "complete") {
       // Fallback chime pattern (used only when needed)
       const a = 660;
-      const asc = [a, a * 1.25, a * 1.5, a * 2, a * 1.5, a * 1.25, a];
-      const freqs = this.nextMode === "focus" ? asc.slice().reverse() : asc;
+      const base = [a, a * 1.25, a * 1.5, a * 2];
+      const focusToBreak = base.concat(base.slice(0, -1).reverse());
+      const breakToFocus = base.slice().reverse().concat(base.slice(1));
+      const freqs = this.nextMode === "focus" ? breakToFocus : focusToBreak;
       const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
       freqs.forEach((f, i) =>
         setTimeout(
@@ -316,8 +318,11 @@ class SoundEngine {
         this.scheduled.push(osc);
       }
     }
-    const asc = [660, 660 * 1.25, 660 * 1.5, 660 * 2, 660 * 1.5, 660 * 1.25, 660];
-    const freqs = nextMode === "focus" ? asc.slice().reverse() : asc;
+    const a = 660;
+    const base = [a, a * 1.25, a * 1.5, a * 2];
+    const focusToBreak = base.concat(base.slice(0, -1).reverse());
+    const breakToFocus = base.slice().reverse().concat(base.slice(1));
+    const freqs = nextMode === "focus" ? breakToFocus : focusToBreak;
     const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
     freqs.forEach((f, i) => {
       const start = t0 + i * 0.18;
@@ -605,7 +610,7 @@ export default function App() {
   // auto-switch when a session completes
   useEffect(() => {
     if (!isRunning || endAt === null) return;
-    if (remaining <= 0) {
+    if (remaining < 1) {
       const next: Mode = mode === "focus" ? "break" : "focus";
       const nt = (next === "focus" ? focusMin : breakMin) * 60;
       setMode(next);
