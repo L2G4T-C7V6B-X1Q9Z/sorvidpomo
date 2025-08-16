@@ -610,7 +610,7 @@ export default function App() {
   // auto-switch when a session completes
   useEffect(() => {
     if (!isRunning || endAt === null) return;
-    if (remaining < 1) {
+    if (remaining <= 0) {
       const next: Mode = mode === "focus" ? "break" : "focus";
       const nt = (next === "focus" ? focusMin : breakMin) * 60;
       setMode(next);
@@ -623,9 +623,16 @@ export default function App() {
 
       // ensure completion chime even if tab was hidden/suspended
       if (scheduledEndRef.current && beepedForRef.current !== scheduledEndRef.current) {
-        // fallback chime if scheduled WebAudio didn’t fire while hidden
-        sound.play("complete");
-        beepedForRef.current = scheduledEndRef.current;
+        // give the scheduled chime a moment before falling back
+        setTimeout(() => {
+          if (
+            scheduledEndRef.current &&
+            beepedForRef.current !== scheduledEndRef.current
+          ) {
+            sound.play("complete");
+            beepedForRef.current = scheduledEndRef.current;
+          }
+        }, 120);
       }
       // allow alarm to finish before scheduling the next chime
       const nextNext: Mode = next === "focus" ? "break" : "focus";
