@@ -160,7 +160,7 @@ class SoundEngine {
   unlocked = false;
   // Track scheduled completion tones on the AudioContext timeline
   scheduled: OscillatorNode[] = [];
-  volume = 0.4;
+  volume = 0.6;
   muted = false;
 
   ensure() {
@@ -314,7 +314,7 @@ class SoundEngine {
         osc.type = "sine";
         osc.frequency.setValueAtTime(1000, start);
         g.gain.setValueAtTime(0, start);
-        g.gain.linearRampToValueAtTime(0.08, start + 0.004);
+        g.gain.linearRampToValueAtTime(0.12, start + 0.004);
         g.gain.exponentialRampToValueAtTime(
           Math.max(1e-4, 0.001),
           start + 0.05
