@@ -293,8 +293,8 @@ class SoundEngine {
     this.cancelScheduled();
     this.nextMode = nextMode;
     const t0 = this.ctx.currentTime + Math.max(0, delaySec);
-    // gentle ticks for the final 5 seconds before a mode switch
-    for (let i = 5; i >= 1; i--) {
+    // gentle ticks for the final 4 seconds before a mode switch
+    for (let i = 4; i >= 1; i--) {
       const start = t0 - i;
       if (start > this.ctx.currentTime) {
         const osc = this.ctx.createOscillator();
@@ -622,17 +622,12 @@ export default function App() {
       setNow(newEnd - nt * 1000);
 
       // ensure completion chime even if tab was hidden/suspended
-      if (scheduledEndRef.current && beepedForRef.current !== scheduledEndRef.current) {
-        // give the scheduled chime a moment before falling back
-        setTimeout(() => {
-          if (
-            scheduledEndRef.current &&
-            beepedForRef.current !== scheduledEndRef.current
-          ) {
-            sound.play("complete");
-            beepedForRef.current = scheduledEndRef.current;
-          }
-        }, 120);
+      if (
+        scheduledEndRef.current &&
+        beepedForRef.current !== scheduledEndRef.current
+      ) {
+        sound.play("complete");
+        beepedForRef.current = scheduledEndRef.current;
       }
       // allow alarm to finish before scheduling the next chime
       const nextNext: Mode = next === "focus" ? "break" : "focus";
