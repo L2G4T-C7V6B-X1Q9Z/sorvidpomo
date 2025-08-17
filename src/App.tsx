@@ -658,7 +658,7 @@ export default function App() {
       }
       // schedule next chime immediately to avoid drift
       const nextNext: Mode = next === "focus" ? "break" : "focus";
-      sound.scheduleCompleteIn(Math.max(0, nt - 2.4), nextNext);
+      sound.scheduleCompleteIn(nt, nextNext);
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(nt);
