@@ -656,12 +656,9 @@ export default function App() {
         sound.play("complete");
         beepedForRef.current = scheduledEndRef.current;
       }
-      // allow alarm to finish before scheduling the next chime
+      // schedule next chime immediately to avoid drift
       const nextNext: Mode = next === "focus" ? "break" : "focus";
-      setTimeout(
-        () => sound.scheduleCompleteIn(Math.max(0, nt - 2.4), nextNext),
-        2400
-      );
+      sound.scheduleCompleteIn(Math.max(0, nt - 2.4), nextNext);
       scheduledEndRef.current = newEnd;
       beepedForRef.current = null;
       scheduleBeepMarkIn(nt);
