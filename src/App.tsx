@@ -165,8 +165,6 @@ class SoundEngine {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
   unlocked = false;
-  // Track scheduled completion tones on the AudioContext timeline
-  scheduled: OscillatorNode[] = [];
   volume = 0.6;
   muted = false;
 
@@ -241,9 +239,20 @@ class SoundEngine {
     osc.stop(t + attack + decay + release + 0.02);
   }
   chord(freqs: number[], opts: Parameters<SoundEngine["blip"]>[1]) {
-    freqs.forEach((f, i) => this.blip(f, { ...opts, peak: (opts?.peak ?? 0.8) * (i ? 0.7 : 1) }));
+    freqs.forEach((f, i) =>
+      this.blip(f, { ...opts, peak: (opts?.peak ?? 0.8) * (i ? 0.7 : 1) })
+    );
   }
-  play(kind: "start" | "pause" | "skip" | "complete" | "click") {
+  play(
+    kind:
+      | "start"
+      | "pause"
+      | "skip"
+      | "complete"
+      | "click"
+      | "tick",
+    nextMode: "focus" | "break" = "break"
+  ) {
     if (kind === "start")
       this.chord([520, 780], { attack: 0.004, decay: 0.11, release: 0.07, sweep: 14 });
     if (kind === "pause")
@@ -267,13 +276,21 @@ class SoundEngine {
         peak: 0.15,
         lpf: 1500,
       });
+    if (kind === "tick")
+      this.blip(1000, {
+        type: "sine",
+        attack: 0.002,
+        decay: 0.05,
+        release: 0.02,
+        peak: 0.12,
+        lpf: 2000,
+      });
     if (kind === "complete") {
-      // Fallback chime pattern (used only when needed)
       const a = 660;
       const base = [a, a * 1.25, a * 1.5, a * 2];
       const focusToBreak = base.concat(base.slice(0, -1).reverse());
       const breakToFocus = base.slice().reverse().concat(base.slice(1));
-      const freqs = this.nextMode === "focus" ? breakToFocus : focusToBreak;
+      const freqs = nextMode === "focus" ? breakToFocus : focusToBreak;
       const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
       freqs.forEach((f, i) =>
         setTimeout(
@@ -289,80 +306,6 @@ class SoundEngine {
       );
     }
   }
-
-  cancelScheduled = () => {
-    if (this.scheduled && this.scheduled.length) {
-      this.scheduled.forEach((o) => {
-        try {
-          o.stop(0);
-        } catch {}
-      });
-      this.scheduled = [];
-    }
-  };
-
-  nextMode: Mode = "break";
-
-  scheduleCompleteIn = (delaySec: number, nextMode: Mode) => {
-    this.ensure();
-    if (!this.ctx || !this.master) return;
-    this.cancelScheduled();
-    this.nextMode = nextMode;
-    const t0 = this.ctx.currentTime + Math.max(0, delaySec);
-    // gentle ticks for the final 5 seconds before a mode switch
-    for (let i = 5; i >= 1; i--) {
-      const start = t0 - i;
-      if (start > this.ctx.currentTime) {
-        const osc = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        const lp = this.ctx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 2000;
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1000, start);
-        g.gain.setValueAtTime(0, start);
-        g.gain.linearRampToValueAtTime(0.12, start + 0.004);
-        g.gain.exponentialRampToValueAtTime(
-          Math.max(1e-4, 0.001),
-          start + 0.05
-        );
-        osc.connect(lp);
-        lp.connect(g);
-        g.connect(this.master!);
-        osc.start(start);
-        osc.stop(start + 0.06);
-        this.scheduled.push(osc);
-      }
-    }
-    const a = 660;
-    const base = [a, a * 1.25, a * 1.5, a * 2];
-    const focusToBreak = base.concat(base.slice(0, -1).reverse());
-    const breakToFocus = base.slice().reverse().concat(base.slice(1));
-    const freqs = nextMode === "focus" ? breakToFocus : focusToBreak;
-    const peaks = [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.15];
-    freqs.forEach((f, i) => {
-      const start = t0 + i * 0.18;
-      const osc = this.ctx!.createOscillator();
-      const g = this.ctx!.createGain();
-      const lp = this.ctx!.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.value = 9000;
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(f, start);
-      g.gain.setValueAtTime(0, start);
-      g.gain.linearRampToValueAtTime(peaks[i], start + 0.004);
-      g.gain.exponentialRampToValueAtTime(
-        Math.max(1e-4, 0.0005),
-        start + 0.004 + 0.15 + 0.15
-      );
-      osc.connect(lp);
-      lp.connect(g);
-      g.connect(this.master!);
-      osc.start(start);
-      osc.stop(start + 0.004 + 0.15 + 0.15 + 0.02);
-      this.scheduled.push(osc);
-    });
-  };
 }
 const sound = new SoundEngine();
 
@@ -572,26 +515,13 @@ export default function App() {
     return () => document.removeEventListener("keydown", onKey);
   }, [toggleFullscreen]);
 
-  // --- Background chime reliability ---
-  // Track absolute end time (ms) and whether we've already beeped for that timestamp.
-  const scheduledEndRef = useRef<number | null>(null);
-  const beepedForRef = useRef<number | null>(null);
-  const beepMarkTimeoutRef = useRef<number | null>(null);
-  const clearBeepMark = () => {
-    if (beepMarkTimeoutRef.current !== null) {
-      clearTimeout(beepMarkTimeoutRef.current);
-      beepMarkTimeoutRef.current = null;
-    }
+  // Countdown tracking
+  const lastSecondRef = useRef<number | null>(null);
+  const completedRef = useRef<number | null>(null);
+  const resetBeepRefs = () => {
+    lastSecondRef.current = null;
+    completedRef.current = null;
   };
-  const scheduleBeepMarkIn = (delaySec: number) => {
-    clearBeepMark();
-    beepMarkTimeoutRef.current = window.setTimeout(() => {
-      if (scheduledEndRef.current) beepedForRef.current = scheduledEndRef.current;
-    }, Math.max(0, delaySec) * 1000);
-  };
-
-  // Ensure we clear any pending timeout on unmount
-  useEffect(() => clearBeepMark, []);
 
   // tick (animation frame) throttled to reduce CPU work
   const lastTick = useRef(0);
@@ -614,24 +544,19 @@ export default function App() {
     return () => clearTimeout(id);
   }, [isRunning, endAt]);
 
-  // If tab was hidden and audio got suspended, play a catch-up chime on return
+  // Resume audio context when returning to the tab
   useEffect(() => {
-    const checkMissed = () => {
-      sound.unlock(); // try to resume AudioContext
-      const to = scheduledEndRef.current;
-      if (!isRunning || !to) return;
-      if (!beepedForRef.current && Date.now() >= to) {
-        sound.play("complete");
-        beepedForRef.current = to;
-      }
+    const resume = () => {
+      sound.unlock();
+      setNow(Date.now());
     };
-    document.addEventListener("visibilitychange", checkMissed);
-    window.addEventListener("focus", checkMissed);
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("focus", resume);
     return () => {
-      document.removeEventListener("visibilitychange", checkMissed);
-      window.removeEventListener("focus", checkMissed);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("focus", resume);
     };
-  }, [isRunning]);
+  }, []);
 
   // remaining
   const remaining = useMemo(
@@ -639,6 +564,20 @@ export default function App() {
     [endAt, now, pausedSec]
   );
   const fracRemaining = clamp01(totalSec ? remaining / totalSec : 0);
+
+  useEffect(() => {
+    if (!isRunning || endAt === null) return;
+    const secLeft = Math.ceil(remaining);
+    if (secLeft <= 5 && secLeft > 0 && secLeft !== lastSecondRef.current) {
+      sound.play("tick");
+      lastSecondRef.current = secLeft;
+    }
+    if (remaining <= 0 && completedRef.current !== endAt) {
+      const next: Mode = mode === "focus" ? "break" : "focus";
+      sound.play("complete", next);
+      completedRef.current = endAt;
+    }
+  }, [remaining, isRunning, endAt, mode]);
 
   // idle-only reset on changes
   const lastKeyRef = useRef<string>("");
@@ -666,23 +605,8 @@ export default function App() {
       const newEnd = Date.now() + nt * 1000;
       setEndAt(newEnd);
       setNow(newEnd - nt * 1000);
-
-      // ensure completion chime even if tab was hidden/suspended
-      if (
-        scheduledEndRef.current &&
-        beepedForRef.current !== scheduledEndRef.current
-      ) {
-        sound.play("complete");
-        beepedForRef.current = scheduledEndRef.current;
-      }
-      // schedule next chime immediately to avoid drift
-      const nextNext: Mode = next === "focus" ? "break" : "focus";
-      sound.scheduleCompleteIn(nt, nextNext);
-      scheduledEndRef.current = newEnd;
-      beepedForRef.current = null;
-      scheduleBeepMarkIn(nt);
-
       lastKeyRef.current = `${next}-${focusMin}-${breakMin}`;
+      resetBeepRefs();
     }
   }, [remaining, isRunning, endAt, mode, focusMin, breakMin]);
 
@@ -700,37 +624,24 @@ export default function App() {
     sound.play("click");
     if (!isRunning) {
       setHasStarted(true);
-      // Robust remaining time: if previous endAt is stale/past, use pausedSec
       let rem: number;
       if (endAt && endAt > Date.now()) {
         rem = (endAt - Date.now()) / 1000;
       } else {
         rem = pausedSec;
       }
-      if (rem < 0.5) rem = pausedSec || totalSec || 60; // avoid instant chime on start
+      if (rem < 0.5) rem = pausedSec || totalSec || 60;
       const newEnd = Date.now() + rem * 1000;
       setEndAt(newEnd);
       setIsRunning(true);
       setNow(Date.now());
-
-      const next: Mode = mode === "focus" ? "break" : "focus";
-      sound.cancelScheduled();
-      sound.scheduleCompleteIn(rem, next);
-      scheduledEndRef.current = newEnd;
-      beepedForRef.current = null;
-      scheduleBeepMarkIn(rem);
-
+      resetBeepRefs();
     } else {
       const rem = Math.max(0, endAt ? (endAt - Date.now()) / 1000 : pausedSec);
       setIsRunning(false);
       setEndAt(null);
       setPausedSec(rem);
-
-      sound.cancelScheduled();
-      scheduledEndRef.current = null;
-      beepedForRef.current = null;
-      clearBeepMark();
-
+      resetBeepRefs();
     }
   };
 
@@ -744,12 +655,7 @@ export default function App() {
     setEndAt(null);
     setTotalSec(sec);
     setPausedSec(sec);
-
-    sound.cancelScheduled();
-    scheduledEndRef.current = null;
-    beepedForRef.current = null;
-    clearBeepMark();
-
+    resetBeepRefs();
   };
 
   const resetTimer = () => {
@@ -759,11 +665,7 @@ export default function App() {
     setEndAt(null);
     setTotalSec(sec);
     setPausedSec(sec);
-
-    sound.cancelScheduled();
-    scheduledEndRef.current = null;
-    beepedForRef.current = null;
-    clearBeepMark();
+    resetBeepRefs();
     lastKeyRef.current = `${mode}-${focusMin}-${breakMin}`;
     setTimeBump((k) => k + 1);
   };
@@ -774,14 +676,8 @@ export default function App() {
     setTotalSec((t) => t + sec);
     if (isRunning && endAt) {
       const newEnd = endAt + sec * 1000;
-      const newRem = Math.max(0, (newEnd - Date.now()) / 1000);
       setEndAt(newEnd);
-      const next: Mode = mode === "focus" ? "break" : "focus";
-      sound.cancelScheduled();
-      sound.scheduleCompleteIn(newRem, next);
-      scheduledEndRef.current = newEnd;
-      beepedForRef.current = null;
-      scheduleBeepMarkIn(newRem);
+      resetBeepRefs();
     } else if (!isRunning) {
       setPausedSec((s) => s + sec);
     }
