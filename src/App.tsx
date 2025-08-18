@@ -40,6 +40,7 @@ const grad = (c: Hsl, a1 = 0.95, a2 = 0.75) =>
 
 type Blob = {
   c: Hsl;
+  grad: string;
   x: number;
   y: number;
   s: number;
@@ -55,6 +56,7 @@ function BlobField({ count = 6 }: { count?: number }) {
       const c = SUNSET[i % SUNSET.length];
       return {
         c,
+        grad: grad(c),
         x: 6 + Math.random() * 88,
         y: 10 + Math.random() * 80,
         s: 0.95 + Math.random() * 0.55,
@@ -68,6 +70,7 @@ function BlobField({ count = 6 }: { count?: number }) {
 
   const [, force] = useState(0);
   const last = useRef(performance.now());
+  const lastDraw = useRef(0);
 
   useAnimationFrame((t) => {
     const dt = t - last.current;
@@ -101,13 +104,17 @@ function BlobField({ count = 6 }: { count?: number }) {
       }
       if (b.y > 100 - padY) {
         b.y = 100 - padY;
-        b.vy = -Math.abs(b.vy) * 0.96;
-      }
+      b.vy = -Math.abs(b.vy) * 0.96;
+    }
 
-      b.phase += b.wobble * dt;
+    b.phase += b.wobble * dt;
     });
 
-    force((n) => (n + 1) % 1e6);
+    // Throttle re-rendering to ~30fps to reduce CPU usage
+    if (t - lastDraw.current > 33) {
+      lastDraw.current = t;
+      force((n) => (n + 1) % 1e6);
+    }
   });
 
   return (
@@ -132,7 +139,7 @@ function BlobField({ count = 6 }: { count?: number }) {
               transform: `translate(-50%, -50%) scale(${b.s})`,
               width: "62vw",
               height: "62vw",
-              background: grad(b.c),
+              background: b.grad,
               borderRadius: `${r1}% ${r2}% ${r3}% ${r4}% / ${e1}% ${e2}% ${e3}% ${e4}%`,
               filter: "blur(90px) saturate(1.05)",
               opacity: 0.94,
@@ -583,16 +590,28 @@ export default function App() {
     }, Math.max(0, delaySec) * 1000);
   };
 
-  // tick (animation frame)
-  useAnimationFrame(() => {
-    if (isRunning && endAt) setNow(Date.now());
+  // Ensure we clear any pending timeout on unmount
+  useEffect(() => clearBeepMark, []);
+
+  // tick (animation frame) throttled to reduce CPU work
+  const lastTick = useRef(0);
+  useAnimationFrame((t) => {
+    if (!isRunning || !endAt) return;
+    if (t - lastTick.current < 250) return; // ~4 updates per second
+    lastTick.current = t;
+    setNow(Date.now());
   });
 
   // background tick so time advances when tab is hidden
   useEffect(() => {
     if (!isRunning || endAt === null) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
+    let id: number;
+    const tick = () => {
+      setNow(Date.now());
+      id = window.setTimeout(tick, 1000);
+    };
+    id = window.setTimeout(tick, 1000);
+    return () => clearTimeout(id);
   }, [isRunning, endAt]);
 
   // If tab was hidden and audio got suspended, play a catch-up chime on return
