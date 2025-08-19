@@ -767,8 +767,6 @@ export default function App() {
           style={{ pointerEvents: idle ? "none" : "auto" }}
           onMouseDown={sound.unlock}
           onTouchStart={sound.unlock}
-          whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-          whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
         >
           {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
         </motion.button>
@@ -781,8 +779,6 @@ export default function App() {
           style={{ pointerEvents: idle ? "none" : "auto" }}
           onMouseDown={sound.unlock}
           onTouchStart={sound.unlock}
-          whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-          whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
         >
           {muted ? <MuteIcon /> : <VolumeIcon />}
         </motion.button>
@@ -844,7 +840,7 @@ export default function App() {
               className="flex items-center justify-center gap-3"
               style={{ pointerEvents: idle ? "none" : "auto" }}
             >
-              <motion.button
+              <button
                 aria-label={isRunning ? "Pause" : "Play"}
                 onClick={playPause}
                 className={btnCls}
@@ -852,12 +848,10 @@ export default function App() {
                 onTouchStart={sound.unlock}
                 onMouseUp={blurTarget}
                 onKeyUp={blurTarget}
-                whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-                whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
               >
                 {isRunning ? <PauseIcon /> : <PlayIcon />}
-              </motion.button>
-              <motion.button
+              </button>
+              <button
                 aria-label="Skip"
                 onClick={skip}
                 className={btnCls}
@@ -865,11 +859,9 @@ export default function App() {
                 onTouchStart={sound.unlock}
                 onMouseUp={blurTarget}
                 onKeyUp={blurTarget}
-                whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-                whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
               >
                 <SkipIcon />
-              </motion.button>
+              </button>
             </motion.div>
 
           </div>
@@ -957,7 +949,7 @@ export default function App() {
                   style={{ pointerEvents: idle ? "none" : "auto" }}
                   className="absolute right-0 top-full mt-1 flex items-center gap-1"
                 >
-                  <motion.button
+                  <button
                     aria-label="Reset timer"
                     onClick={resetTimer}
                     className={`${tinyBtnCls} [&>span]:rotate-[270deg] [&>span]:text-base inline-block`}
@@ -965,12 +957,10 @@ export default function App() {
                     onTouchStart={sound.unlock}
                     onMouseUp={blurTarget}
                     onKeyUp={blurTarget}
-                    whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-                    whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
                   >
                     <span className="inline-block">↺</span>
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     aria-label="Add 1 minute"
                     onClick={() => addTime(60)}
                     className={tinyBtnCls}
@@ -978,12 +968,10 @@ export default function App() {
                     onTouchStart={sound.unlock}
                     onMouseUp={blurTarget}
                     onKeyUp={blurTarget}
-                    whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-                    whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
                   >
                     +1
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     aria-label="Add 5 minutes"
                     onClick={() => addTime(300)}
                     className={tinyBtnCls}
@@ -991,11 +979,9 @@ export default function App() {
                     onTouchStart={sound.unlock}
                     onMouseUp={blurTarget}
                     onKeyUp={blurTarget}
-                    whileHover={{ scale: 1.05, rotate: 2, transition: { duration: 0.15 } }}
-                    whileTap={{ scale: 0.95, transition: { duration: 0.15 } }}
                   >
                     +5
-                  </motion.button>
+                  </button>
                 </motion.div>
               </div>
             </div>
