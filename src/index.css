@@ -48,3 +48,17 @@ input[type="number"] { -moz-appearance: textfield; }
   background: radial-gradient(65% 50% at 50% 70%, rgba(0,0,0,0.08), transparent 60%);
   pointer-events: none;
 }
+
+/* subtle 3D tilt for interactive buttons */
+.tilt {
+  transform:
+    perspective(600px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg))
+    translate(var(--tw-translate-x), var(--tw-translate-y))
+    rotate(var(--tw-rotate))
+    skewX(var(--tw-skew-x))
+    skewY(var(--tw-skew-y))
+    scaleX(var(--tw-scale-x))
+    scaleY(var(--tw-scale-y));
+}

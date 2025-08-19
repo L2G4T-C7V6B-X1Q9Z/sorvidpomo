@@ -5,6 +5,7 @@ import {
   useAnimationFrame,
   useReducedMotion,
 } from "framer-motion";
+import TiltButton from "./TiltButton";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -743,8 +744,8 @@ export default function App() {
     : "ring-1 ring-white/10 focus:ring-2 focus:ring-white/30";
   const surface = isBreak ? "bg-black/12 text-black backdrop-blur-md" : "bg-white/10 text-white backdrop-blur-md";
   const inputCls = `${CONTROL_W} ${CONTROL_H} leading-none rounded-xl px-2 text-center outline-none ${inputRing} ${surface} transition-colors`;
-  const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
-  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
+  const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-transform transform-gpu outline-none focus:outline-none focus:ring-0`;
+  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none active:scale-95 transition-transform transform-gpu outline-none focus:outline-none focus:ring-0`;
 
   // stack position
   const controlsAnchorTop = `calc(25vh - ${SIZE / 4}px)`;
@@ -860,7 +861,7 @@ export default function App() {
               className="flex items-center justify-center gap-3"
               style={{ pointerEvents: idle ? "none" : "auto" }}
             >
-              <button
+              <TiltButton
                 aria-label={isRunning ? "Pause" : "Play"}
                 onClick={playPause}
                 className={btnCls}
@@ -870,8 +871,8 @@ export default function App() {
                 onKeyUp={blurTarget}
               >
                 {isRunning ? <PauseIcon /> : <PlayIcon />}
-              </button>
-              <button
+              </TiltButton>
+              <TiltButton
                 aria-label="Skip"
                 onClick={skip}
                 className={btnCls}
@@ -881,7 +882,7 @@ export default function App() {
                 onKeyUp={blurTarget}
               >
                 <SkipIcon />
-              </button>
+              </TiltButton>
             </motion.div>
 
           </div>
@@ -969,7 +970,7 @@ export default function App() {
                   style={{ pointerEvents: idle ? "none" : "auto" }}
                   className="absolute right-0 top-full mt-1 flex items-center gap-1"
                 >
-                  <button
+                  <TiltButton
                     aria-label="Reset timer"
                     onClick={resetTimer}
                     className={`${tinyBtnCls} [&>span]:rotate-[270deg] [&>span]:text-base inline-block`}
@@ -979,8 +980,8 @@ export default function App() {
                     onKeyUp={blurTarget}
                   >
                     <span className="inline-block">↺</span>
-                  </button>
-                  <button
+                  </TiltButton>
+                  <TiltButton
                     aria-label="Add 1 minute"
                     onClick={() => addTime(60)}
                     className={tinyBtnCls}
@@ -990,8 +991,8 @@ export default function App() {
                     onKeyUp={blurTarget}
                   >
                     +1
-                  </button>
-                  <button
+                  </TiltButton>
+                  <TiltButton
                     aria-label="Add 5 minutes"
                     onClick={() => addTime(300)}
                     className={tinyBtnCls}
@@ -1001,7 +1002,7 @@ export default function App() {
                     onKeyUp={blurTarget}
                   >
                     +5
-                  </button>
+                  </TiltButton>
                 </motion.div>
               </div>
             </div>
