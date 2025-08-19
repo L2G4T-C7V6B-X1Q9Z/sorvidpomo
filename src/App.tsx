@@ -348,6 +348,71 @@ const MuteIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+/* ===================== TiltButton ===================== */
+function TiltButton({
+  className = "",
+  style,
+  children,
+  onMouseMove,
+  onMouseLeave,
+  onMouseDown,
+  onMouseUp,
+  onTouchStart,
+  onTouchEnd,
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [pressed, setPressed] = useState(false);
+
+  const handleMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ x: -y * 4, y: x * 4 });
+    onMouseMove?.(e);
+  };
+  const handleLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setTilt({ x: 0, y: 0 });
+    onMouseLeave?.(e);
+  };
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setPressed(true);
+    onMouseDown?.(e);
+  };
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setPressed(false);
+    onMouseUp?.(e);
+  };
+  const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+    setPressed(true);
+    onTouchStart?.(e);
+  };
+  const handleTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
+    setPressed(false);
+    onTouchEnd?.(e);
+  };
+
+  const transform = `perspective(600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) ${
+    pressed ? "scale(0.97)" : ""
+  }`;
+
+  return (
+    <button
+      {...rest}
+      className={className}
+      style={{ ...style, transform }}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {children}
+    </button>
+  );
+}
+
 /* ===================== Animated time ===================== */
 function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
   const [display, setDisplay] = useState(fmt(value));
@@ -733,8 +798,8 @@ export default function App() {
     : "ring-1 ring-white/10 focus:ring-2 focus:ring-white/30";
   const surface = isBreak ? "bg-black/12 text-black backdrop-blur-md" : "bg-white/10 text-white backdrop-blur-md";
   const inputCls = `${CONTROL_W} ${CONTROL_H} leading-none rounded-xl px-2 text-center outline-none ${inputRing} ${surface} transition-colors`;
-  const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
-  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
+  const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none transition-transform outline-none focus:outline-none focus:ring-0`;
+  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none transition-transform outline-none focus:outline-none focus:ring-0`;
 
   // stack position
   const controlsAnchorTop = `calc(25vh - ${SIZE / 4}px)`;
@@ -768,30 +833,38 @@ export default function App() {
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
-        <motion.button
-          aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
-          onClick={toggleFullscreen}
-          className={`absolute top-4 right-4 ${tinyBtnCls}`}
+        <motion.div
+          className="absolute top-4 right-4"
           animate={{ opacity: idle ? 0 : 1 }}
           transition={{ duration: 0.2 }}
           style={{ pointerEvents: idle ? "none" : "auto" }}
-          onMouseDown={sound.unlock}
-          onTouchStart={sound.unlock}
         >
-          {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
-        </motion.button>
-        <motion.button
-          aria-label={muted ? "Unmute" : "Mute"}
-          onClick={() => setMuted((m) => !m)}
-          className={`absolute bottom-4 right-4 ${tinyBtnCls}`}
+          <TiltButton
+            aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
+            onClick={toggleFullscreen}
+            className={tinyBtnCls}
+            onMouseDown={sound.unlock}
+            onTouchStart={sound.unlock}
+          >
+            {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+          </TiltButton>
+        </motion.div>
+        <motion.div
+          className="absolute bottom-4 right-4"
           animate={{ opacity: idle ? 0 : 1 }}
           transition={{ duration: 0.2 }}
           style={{ pointerEvents: idle ? "none" : "auto" }}
-          onMouseDown={sound.unlock}
-          onTouchStart={sound.unlock}
         >
-          {muted ? <MuteIcon /> : <VolumeIcon />}
-        </motion.button>
+          <TiltButton
+            aria-label={muted ? "Unmute" : "Mute"}
+            onClick={() => setMuted((m) => !m)}
+            className={tinyBtnCls}
+            onMouseDown={sound.unlock}
+            onTouchStart={sound.unlock}
+          >
+            {muted ? <MuteIcon /> : <VolumeIcon />}
+          </TiltButton>
+        </motion.div>
         <div className="absolute inset-x-0 text-center" style={{ top: controlsAnchorTop, transform: "translateY(-50%)" }}>
           <div className="relative mx-auto w-fit flex flex-col items-center gap-2">
             {/* Title */}
@@ -854,7 +927,7 @@ export default function App() {
               className="flex items-center justify-center gap-3"
               style={{ pointerEvents: idle ? "none" : "auto" }}
             >
-              <button
+              <TiltButton
                 aria-label={isRunning ? "Pause" : "Play"}
                 onClick={playPause}
                 className={btnCls}
@@ -864,8 +937,8 @@ export default function App() {
                 onKeyUp={blurTarget}
               >
                 {isRunning ? <PauseIcon /> : <PlayIcon />}
-              </button>
-              <button
+              </TiltButton>
+              <TiltButton
                 aria-label="Skip"
                 onClick={skip}
                 className={btnCls}
@@ -875,7 +948,7 @@ export default function App() {
                 onKeyUp={blurTarget}
               >
                 <SkipIcon />
-              </button>
+              </TiltButton>
             </motion.div>
 
           </div>
@@ -936,7 +1009,7 @@ export default function App() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-green-500"
+                    className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-gray-500"
                   >
                     ✓
                   </motion.div>
@@ -976,7 +1049,7 @@ export default function App() {
                   style={{ pointerEvents: idle ? "none" : "auto" }}
                   className="absolute right-0 top-full mt-1 flex items-center gap-1"
                 >
-                  <button
+                  <TiltButton
                     aria-label="Reset timer"
                     onClick={resetTimer}
                     className={`${tinyBtnCls} [&>span]:rotate-[270deg] [&>span]:text-base inline-block`}
@@ -986,8 +1059,8 @@ export default function App() {
                     onKeyUp={blurTarget}
                   >
                     <span className="inline-block">↺</span>
-                  </button>
-                  <button
+                  </TiltButton>
+                  <TiltButton
                     aria-label="Add 1 minute"
                     onClick={() => addTime(60)}
                     className={tinyBtnCls}
@@ -997,8 +1070,8 @@ export default function App() {
                     onKeyUp={blurTarget}
                   >
                     +1
-                  </button>
-                  <button
+                  </TiltButton>
+                  <TiltButton
                     aria-label="Add 5 minutes"
                     onClick={() => addTime(300)}
                     className={tinyBtnCls}
@@ -1008,7 +1081,7 @@ export default function App() {
                     onKeyUp={blurTarget}
                   >
                     +5
-                  </button>
+                  </TiltButton>
                 </motion.div>
               </div>
             </div>
