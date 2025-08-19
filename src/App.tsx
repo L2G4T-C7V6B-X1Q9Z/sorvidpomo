@@ -714,7 +714,13 @@ export default function App() {
 
   // theming
   const isBreak = mode === "break";
-  const textMain = isBreak ? "text-black/90" : "text-white/90";
+  const logoColor = idle
+    ? isBreak
+      ? "rgba(0,0,0,0.14)"
+      : "rgba(255,255,255,0.16)"
+    : isBreak
+      ? "rgba(0,0,0,0.9)"
+      : "rgba(255,255,255,0.9)";
   const label = isBreak ? "text-black/60" : "text-white/60";
 
   // unified chip sizing
@@ -789,7 +795,11 @@ export default function App() {
         <div className="absolute inset-x-0 text-center" style={{ top: controlsAnchorTop, transform: "translateY(-50%)" }}>
           <div className="relative mx-auto w-fit flex flex-col items-center gap-2">
             {/* Title */}
-            <div className={`-mb-1 ${textMain}`}>
+            <motion.div
+              className="-mb-1"
+              animate={{ color: logoColor }}
+              transition={{ duration: 0.2 }}
+            >
               <a
                 href="https://github.com/l2g4t-c7v6b-x1q9z/sorvidpomo"
                 target="_blank"
@@ -798,7 +808,7 @@ export default function App() {
               >
                 Pomodoro
               </a>
-            </div>
+            </motion.div>
 
             {/* Durations */}
             <motion.div
