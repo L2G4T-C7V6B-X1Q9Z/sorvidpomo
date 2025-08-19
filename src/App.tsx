@@ -1,11 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  motion,
-  AnimatePresence,
-  useAnimationFrame,
-  useMotionValue,
-  animate,
-} from "framer-motion";
+import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -571,15 +565,6 @@ export default function App() {
   );
   const fracRemaining = clamp01(totalSec ? remaining / totalSec : 0);
 
-  const pathProgress = useMotionValue(fracRemaining);
-  useEffect(() => {
-    const controls = animate(pathProgress, Math.max(0.001, fracRemaining), {
-      duration: 1,
-      ease: "linear",
-    });
-    return controls.stop;
-  }, [fracRemaining, pathProgress]);
-
   useEffect(() => {
     if (!isRunning || endAt === null) return;
     const secLeft = Math.ceil(remaining);
@@ -913,8 +898,9 @@ export default function App() {
                   strokeLinecap="round"
                   fill="none"
                   filter="url(#ringGlow)"
-                  strokeDasharray="0 1"
-                  style={{ pathLength: pathProgress }}
+                  strokeDasharray={`${CIRC * Math.max(0.001, fracRemaining)} ${CIRC}`}
+                  animate={{ pathLength: Math.max(0.001, fracRemaining) }}
+                  transition={{ type: "tween", ease: "linear", duration: 0.05 }}
                 />
               </g>
             </svg>
