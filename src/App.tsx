@@ -458,6 +458,7 @@ export default function App() {
   const [totalSec, setTotalSec] = useState(focusMin * 60);
   const [now, setNow] = useState(Date.now());
   const [timeBump, setTimeBump] = useState(0);
+  const [justCompleted, setJustCompleted] = useState(false);
   // Hide controls when idle and show on mouse movement
   const [idle, setIdle] = useState(false);
   const idleTimeoutRef = useRef<number | null>(null);
@@ -607,6 +608,8 @@ export default function App() {
       setNow(newEnd - nt * 1000);
       lastKeyRef.current = `${next}-${focusMin}-${breakMin}`;
       resetBeepRefs();
+      setJustCompleted(true);
+      window.setTimeout(() => setJustCompleted(false), 1500);
     }
   }, [remaining, isRunning, endAt, mode, focusMin, breakMin]);
 
@@ -648,6 +651,7 @@ export default function App() {
   const skip = async () => {
     await sound.unlock();
     sound.play("click");
+    setJustCompleted(false);
     const next: Mode = mode === "focus" ? "break" : "focus";
     const sec = (next === "focus" ? focusMin : breakMin) * 60;
     setMode(next);
@@ -915,6 +919,19 @@ export default function App() {
               }}
             >
               <ModeTag mode={mode} isBreak={isBreak} />
+              <AnimatePresence>
+                {justCompleted && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-green-500"
+                  >
+                    ✓
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <AnimatePresence>
                 {showStoppedWarning && (
                   <motion.div
