@@ -1,10 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  motion,
-  AnimatePresence,
-  useAnimationFrame,
-  useReducedMotion,
-} from "framer-motion";
+import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
 
 /* ===================== Dial geometry ===================== */
 const SIZE = 440;
@@ -357,61 +352,46 @@ const MuteIcon = ({ size = 16 }: { size?: number }) => (
 function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
   const [display, setDisplay] = useState(fmt(value));
   useEffect(() => setDisplay(fmt(value)), [value]);
-  const [mins, secs] = display.split(":");
-  const parts = [mins, ":", secs];
+  const chars = display.split("");
   const cls = `${dark ? "text-white" : "text-black"} text-6xl md:text-7xl font-bold`;
-  const prefersReducedMotion = useReducedMotion();
-
-  const motionProps = prefersReducedMotion
-    ? {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-      }
-    : {
-        initial: { y: 8, opacity: 0 },
-        animate: { y: 0, opacity: 1 },
-        exit: { y: -8, opacity: 0 },
-      };
 
   return (
-    <div
-      className={`${cls} inline-flex whitespace-nowrap`}
-      style={{ fontVariantNumeric: "tabular-nums", lineHeight: 1 }}
-    >
-      {parts.map((part, i) => {
-        const isColon = part === ":";
-        const key = `${i}-${part}`;
-        const width = `${0.6 * part.length}em`;
-        if (isColon) {
-          return (
-            <span
-              key={key}
-              className="relative inline-block text-center align-middle translate-y-[-10%]"
-              style={{ width: "0.6em", verticalAlign: "middle" }}
-            >
-              {part}
-            </span>
-          );
-        }
-
+    <div className={`${cls} inline-flex whitespace-nowrap`} style={{ fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+      {chars.map((ch, i) => {
+        const key = `${i}-${ch}`;
+        const isDigit = /\d/.test(ch);
+        const isColon = ch === ":";
         return (
           <span
             key={key}
-            className="relative inline-block text-center align-middle"
-            style={{ width, verticalAlign: "middle" }}
+            className={`relative inline-block text-center align-middle ${isColon ? "translate-y-[-10%]" : ""}`}
+            style={{ width: "0.6em", verticalAlign: "middle" }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
-                key={part}
-                {...motionProps}
+                key={key}
+                initial={
+                  isDigit
+                    ? { opacity: 0, scale: 0.95 }
+                    : { opacity: 1 }
+                }
+                animate={
+                  isDigit
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 1 }
+                }
+                exit={
+                  isDigit
+                    ? { opacity: 0, scale: 1.05 }
+                    : { opacity: 1 }
+                }
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="absolute inset-0"
               >
-                {part}
+                {ch}
               </motion.span>
             </AnimatePresence>
-            <span className="invisible">{part}</span>
+            <span className="invisible">{ch}</span>
           </span>
         );
       })}
