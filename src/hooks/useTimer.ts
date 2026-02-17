@@ -51,11 +51,11 @@ export function useTimer() {
     completedRef.current = null;
   }, []);
 
-  // throttled animation frame tick (~4fps)
+  // throttled animation frame tick (~20fps)
   const lastTick = useRef(0);
   useAnimationFrame((t) => {
     if (!isRunning || !endAt) return;
-    if (t - lastTick.current < 250) return;
+    if (t - lastTick.current < 50) return;
     lastTick.current = t;
     setNow(Date.now());
   });
