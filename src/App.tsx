@@ -81,7 +81,7 @@ export default function App() {
   const showStoppedWarning = timer.hasStarted && !timer.isRunning;
 
   return (
-    <div className={`relative${idle ? " cursor-none" : ""}`} style={{ minHeight: "100vh" }}>
+    <div className={`relative${idle ? " cursor-none" : ""}`} style={{ height: "100vh", overflow: "hidden" }}>
       {/* Base background */}
       <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000", transition: "background-color 0.8s ease" }} />
 
