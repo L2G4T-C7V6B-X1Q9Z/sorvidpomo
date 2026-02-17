@@ -73,9 +73,9 @@ export default function App() {
     ? "ring-1 ring-black/10 focus:ring-2 focus:ring-black/20"
     : "ring-1 ring-white/10 focus:ring-2 focus:ring-white/30";
   const surface = isBreak ? "bg-black/12 text-black backdrop-blur-md" : "bg-white/10 text-white backdrop-blur-md";
-  const inputCls = `${CONTROL_W} ${CONTROL_H} leading-none rounded-xl px-2 text-center outline-none ${inputRing} ${surface} transition-colors`;
-  const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
-  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none active:scale-95 transition-transform outline-none focus:outline-none focus:ring-0`;
+  const inputCls = `${CONTROL_W} ${CONTROL_H} leading-none rounded-xl px-2 text-center outline-none ${inputRing} ${surface} transition-all duration-500`;
+  const btnCls = `rounded-xl ${CONTROL_W} ${CONTROL_H} flex items-center justify-center ${surface} select-none active:scale-95 transition-all duration-500 outline-none focus:outline-none focus:ring-0`;
+  const tinyBtnCls = `rounded-lg w-8 h-8 flex items-center justify-center text-xs ${surface} select-none active:scale-95 transition-all duration-500 outline-none focus:outline-none focus:ring-0`;
 
   const controlsAnchorTop = `calc(25vh - ${SIZE / 4}px)`;
   const showStoppedWarning = timer.hasStarted && !timer.isRunning;
@@ -83,27 +83,46 @@ export default function App() {
   return (
     <div className={`relative${idle ? " cursor-none" : ""}`} style={{ minHeight: "100vh" }}>
       {/* Base background */}
-      <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000" }} />
+      <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000", transition: "background-color 0.8s ease" }} />
 
       {/* BREAK: blobs + grain overlay */}
-      <AnimatePresence>{isBreak && <BlobField key="sunset" />}</AnimatePresence>
-      {isBreak && (
-        <div
-          className="absolute inset-0 -z-10 pointer-events-none"
-          style={{
-            backgroundImage: [
-              "radial-gradient(rgba(0,0,0,0.28) 1px, transparent 1.4px)",
-              "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 2px)",
-              "radial-gradient(rgba(0,0,0,0.14) 1px, transparent 3px)",
-              "radial-gradient(rgba(0,0,0,0.10) 1px, transparent 4px)",
-            ].join(","),
-            backgroundSize: "1.8px 1.8px, 3.4px 3.4px, 5px 5px, 7px 7px",
-            backgroundPosition: "0 0, 1px 1px, 0.5px 0.5px, 0.25px 0.25px",
-            opacity: 0.9,
-            mixBlendMode: "multiply",
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {isBreak && (
+          <motion.div
+            key="blob-wrapper"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 z-0"
+          >
+            <BlobField />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isBreak && (
+          <motion.div
+            key="grain"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.9 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 -z-10 pointer-events-none"
+            style={{
+              backgroundImage: [
+                "radial-gradient(rgba(0,0,0,0.28) 1px, transparent 1.4px)",
+                "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 2px)",
+                "radial-gradient(rgba(0,0,0,0.14) 1px, transparent 3px)",
+                "radial-gradient(rgba(0,0,0,0.10) 1px, transparent 4px)",
+              ].join(","),
+              backgroundSize: "1.8px 1.8px, 3.4px 3.4px, 5px 5px, 7px 7px",
+              backgroundPosition: "0 0, 1px 1px, 0.5px 0.5px, 0.25px 0.25px",
+              mixBlendMode: "multiply",
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Controls */}
       <div className="fixed inset-0 z-10">
@@ -137,7 +156,7 @@ export default function App() {
             <motion.div
               className="-mb-1"
               animate={{ color: logoColor }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.6 }}
             >
               <a
                 href="https://github.com/l2g4t-c7v6b-x1q9z/sorvidpomo"
@@ -238,6 +257,7 @@ export default function App() {
                   stroke={isBreak ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.16)"}
                   strokeWidth={STROKE}
                   fill="none"
+                  style={{ transition: "stroke 0.8s ease" }}
                 />
                 <motion.circle
                   r={R}
@@ -248,6 +268,7 @@ export default function App() {
                   strokeLinecap="round"
                   fill="none"
                   filter="url(#ringGlow)"
+                  style={{ transition: "stroke 0.8s ease" }}
                   strokeDasharray={`${CIRC * Math.max(0.001, timer.fracRemaining)} ${CIRC}`}
                   animate={{ pathLength: Math.max(0.001, timer.fracRemaining) }}
                   transition={{ type: "tween", ease: "linear", duration: 0.05 }}
