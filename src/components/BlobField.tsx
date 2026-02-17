@@ -9,9 +9,9 @@ const SUNSET: Hsl[] = [
   { h: 208, s: 78, l: 74 },
 ];
 
-// Soft multi-stop gradient — mimics blur(90px) without any CSS filter
+// Opaque gradient with soft edge — the frosted veil blurs everything in one pass
 const grad = (c: Hsl) =>
-  `radial-gradient(circle at 50% 50%, hsla(${c.h},${c.s}%,${c.l}%,0.55), hsla(${c.h},${c.s}%,${c.l}%,0.35) 20%, hsla(${c.h},${c.s}%,${c.l}%,0.12) 45%, transparent 65%)`;
+  `radial-gradient(circle at 50% 50%, hsla(${c.h},${c.s}%,${c.l}%,0.9), hsla(${c.h},${c.s}%,${Math.max(0, c.l - 8)}%,0.7) 50%, transparent 72%)`;
 
 type Blob = {
   c: Hsl;
@@ -27,7 +27,7 @@ type Blob = {
 
 export default function BlobField({ count = 5 }: { count?: number }) {
   const blobCount = typeof window !== "undefined" && window.innerWidth < 768
-    ? Math.min(count, 2)
+    ? Math.min(count, 3)
     : count;
 
   const blobsRef = useRef<Blob[]>(
@@ -106,21 +106,23 @@ export default function BlobField({ count = 5 }: { count?: number }) {
               top: 0,
               transform: `translate(calc(${b.x}vw - 50%), calc(${b.y}vh - 50%)) scale(${b.s})`,
               willChange: "transform",
-              width: "100vw",
-              height: "100vw",
+              width: "80vw",
+              height: "80vw",
               background: b.grad,
               borderRadius: `${r1}% ${r2}% ${r3}% ${r4}%`,
-              opacity: 0.9,
+              opacity: 0.92,
             }}
           />
         );
       })}
-      {/* Semi-opaque overlay replaces expensive backdrop-filter: blur() */}
+      {/* Single backdrop-filter blurs ALL blobs in one GPU pass (vs. 6 individual blur filters before) */}
       <div
         className="absolute pointer-events-none"
         style={{
           inset: 0,
-          background: "rgba(255,255,255,0.45)",
+          background: "rgba(255,255,255,0.32)",
+          backdropFilter: "blur(44px) saturate(1.05)",
+          WebkitBackdropFilter: "blur(44px) saturate(1.05)",
         }}
       />
     </div>
