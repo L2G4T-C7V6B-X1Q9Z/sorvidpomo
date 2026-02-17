@@ -15,7 +15,14 @@ export default function AnimatedTime({ value, dark }: { value: number; dark: boo
   const cls = `${dark ? "text-white" : "text-black"} text-6xl md:text-7xl font-bold`;
 
   return (
-    <div className={`${cls} inline-flex whitespace-nowrap`} style={{ fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+    <div
+      role="timer"
+      aria-live="off"
+      aria-atomic="true"
+      aria-label={display}
+      className={`${cls} inline-flex whitespace-nowrap`}
+      style={{ fontVariantNumeric: "tabular-nums", lineHeight: 1 }}
+    >
       {chars.map((ch, i) => {
         const key = `${i}-${ch}`;
         const isDigit = /\d/.test(ch);

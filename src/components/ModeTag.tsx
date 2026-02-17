@@ -4,9 +4,15 @@ export default function ModeTag({ mode, isBreak }: { mode: "focus" | "break"; is
   const text = mode === "focus" ? "FOCUS" : "BREAK";
   const fg = isBreak ? "text-black/50" : "text-white/50";
   return (
-    <div className="relative h-6">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={`Current mode: ${text}`}
+      className="relative h-6"
+    >
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
+          aria-hidden="true"
           key={text}
           initial={{ y: -6, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
