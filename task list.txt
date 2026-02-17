@@ -1,31 +1,31 @@
 Tasks
 
 Planned
+- [ ] Create joinable "pomo session"
+	- [ ] Server-based pomo rooms with sync across users
+	- [ ] Notifications when timer starts, stops, or is skipped
+	- [ ] Server roster showing active participants
+- [ ] Cross-device notifications (Mac, Windows, Android, iPhone)
+- [ ] Create native Mac app version with session sync
 - [ ] Research data collection options
-- [ ] Optimize timer presets for study sessions
-- [ ] Add subtle dot wave animation for focus background
-- [ ] Reorganize control layout
-- [ ] Improve mobile layout
-- [ ] Add more grain to focus and break backgrounds
-- [ ] Update sound design
-	- [ ] alarm sounds are too quiet, needs to go on for longer
-- [ ] Increase volume of session-complete sounds
-- [ ] Provide sound controls (mute, volume)
-- [ ] Create joinable "pomo session" 
-	- [ ] server type situation? create pomo rooms, 
-	- [ ] sync across agents 
-	- [ ] also create notifications that timer started, stopped, skipped
-	- [ ] server roster
-- [ ] notifications button needs to work, across devices - mac/windows/android/iphone
-- [ ] full screen button bugged. pressing F works
-- [ ] computational optimiaztion for graphics. will need to play with it. consider task list
-- [ ] create mac app version to run and sync w sessions, instead of a web app version
-
-
 
 Completed
+- [x] Full codebase refactor: extract components, hooks, and types into modular src/ structure
+- [x] Rewrite README with features, shortcuts, controls, project structure
+- [x] Add meta tags (description, theme-color, og:title, og:description)
+- [x] Update task list to reflect overhaul progress
+- [x] Mute button and sound controls
+- [x] +1 and +5 minute add buttons
+- [x] Skip session button
+- [x] Reset current session button
+- [x] Idle cursor hide (3s inactivity)
+- [x] Live document title updates
+- [x] Fullscreen toggle (F key and button)
+- [x] Animated blob background during breaks
+- [x] Synthesized sound effects via Web Audio API
+- [x] Customizable focus/break durations with localStorage persistence
 - [x] Background activity: sound and animations continue in background tabs
-- [x] +5 minutes button
-- [x] Play/pause control via space bar
+- [x] Play/pause control via Space bar
 - [x] Auto-hide controls after inactivity
-- [x] Review app.tsx
+- [x] Circular SVG progress ring with glow effect
+- [x] Auto-advance between focus and break sessions
