@@ -72,7 +72,7 @@ export default function BlobField({ count = 6 }: { count?: number }) {
       b.x += b.vx * 0.58;
       b.y += b.vy * 0.58;
 
-      const padX = 1.5, padY = 2.0;
+      const padX = 8, padY = 8;
       if (b.x < padX) { b.x = padX; b.vx = Math.abs(b.vx) * 0.96; }
       if (b.x > 100 - padX) { b.x = 100 - padX; b.vx = -Math.abs(b.vx) * 0.96; }
       if (b.y < padY) { b.y = padY; b.vy = Math.abs(b.vy) * 0.96; }
@@ -89,7 +89,10 @@ export default function BlobField({ count = 6 }: { count?: number }) {
   });
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <div
+      className="absolute pointer-events-none overflow-hidden z-0"
+      style={{ inset: "-200px" }}
+    >
       {blobsRef.current.slice(0, blobCount).map((b, i) => {
         // Precompute sin/cos values for shape morphing
         const sp0 = Math.sin(b.phase);
@@ -116,8 +119,8 @@ export default function BlobField({ count = 6 }: { count?: number }) {
               top: 0,
               transform: `translate(calc(${b.x}vw - 50%), calc(${b.y}vh - 50%)) scale(${b.s})`,
               willChange: "transform",
-              width: "62vw",
-              height: "62vw",
+              width: "68vw",
+              height: "68vw",
               background: b.grad,
               borderRadius: `${r1}% ${r2}% ${r3}% ${r4}% / ${e1}% ${e2}% ${e3}% ${e4}%`,
               filter: "blur(90px) saturate(1.05)",
@@ -127,11 +130,12 @@ export default function BlobField({ count = 6 }: { count?: number }) {
         );
       })}
       <div
-        className="absolute inset-0"
+        className="fixed inset-0"
         style={{
           background: "rgba(255,255,255,0.36)",
           backdropFilter: "blur(28px) saturate(1.05)",
           WebkitBackdropFilter: "blur(28px) saturate(1.05)",
+          pointerEvents: "none",
         }}
       />
     </div>
