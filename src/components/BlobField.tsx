@@ -130,12 +130,12 @@ export default function BlobField({ count = 6 }: { count?: number }) {
         );
       })}
       <div
-        className="fixed inset-0"
+        className="absolute pointer-events-none"
         style={{
+          inset: 0,
           background: "rgba(255,255,255,0.36)",
           backdropFilter: "blur(28px) saturate(1.05)",
           WebkitBackdropFilter: "blur(28px) saturate(1.05)",
-          pointerEvents: "none",
         }}
       />
     </div>
