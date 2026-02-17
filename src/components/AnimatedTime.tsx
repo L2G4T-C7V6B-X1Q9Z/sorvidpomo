@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const fmt = (s: number) => {
@@ -9,8 +8,7 @@ export const fmt = (s: number) => {
 };
 
 export default function AnimatedTime({ value, dark }: { value: number; dark: boolean }) {
-  const [display, setDisplay] = useState(fmt(value));
-  useEffect(() => setDisplay(fmt(value)), [value]);
+  const display = fmt(value);
   const chars = display.split("");
   const cls = `${dark ? "text-white" : "text-black"} text-6xl md:text-7xl font-bold`;
 
@@ -33,25 +31,13 @@ export default function AnimatedTime({ value, dark }: { value: number; dark: boo
             className={`relative inline-block text-center align-middle ${isColon ? "translate-y-[-10%]" : ""}`}
             style={{ width: "0.6em", verticalAlign: "middle" }}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
+            <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={key}
-                initial={
-                  isDigit
-                    ? { opacity: 0, scale: 0.95 }
-                    : { opacity: 1 }
-                }
-                animate={
-                  isDigit
-                    ? { opacity: 1, scale: 1 }
-                    : { opacity: 1 }
-                }
-                exit={
-                  isDigit
-                    ? { opacity: 0, scale: 1.05 }
-                    : { opacity: 1 }
-                }
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                initial={isDigit ? { opacity: 0, y: 4 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                exit={isDigit ? { opacity: 0, y: -4 } : undefined}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
                 className="absolute inset-0"
               >
                 {ch}
