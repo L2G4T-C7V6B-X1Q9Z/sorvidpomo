@@ -81,11 +81,9 @@ export default function App() {
   const showStoppedWarning = timer.hasStarted && !timer.isRunning;
 
   return (
-    <div className={`relative${idle ? " cursor-none" : ""}`} style={{ height: "100vh", overflow: "hidden" }}>
-      {/* Base background */}
-      <div className="absolute inset-0 -z-10" style={{ backgroundColor: isBreak ? "#ffffff" : "#000000", transition: "background-color 0.8s ease" }} />
+    <div className={`relative${idle ? " cursor-none" : ""}`} style={{ height: "100vh", overflow: "hidden", backgroundColor: isBreak ? "#ffffff" : "#000000", transition: "background-color 0.8s ease" }}>
 
-      {/* BREAK: blobs + grain overlay */}
+      {/* BREAK: blobs */}
       <AnimatePresence>
         {isBreak && (
           <motion.div
@@ -98,29 +96,6 @@ export default function App() {
           >
             <BlobField />
           </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isBreak && (
-          <motion.div
-            key="grain"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.9 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 -z-10 pointer-events-none"
-            style={{
-              backgroundImage: [
-                "radial-gradient(rgba(0,0,0,0.28) 1px, transparent 1.4px)",
-                "radial-gradient(rgba(0,0,0,0.22) 1px, transparent 2px)",
-                "radial-gradient(rgba(0,0,0,0.14) 1px, transparent 3px)",
-                "radial-gradient(rgba(0,0,0,0.10) 1px, transparent 4px)",
-              ].join(","),
-              backgroundSize: "1.8px 1.8px, 3.4px 3.4px, 5px 5px, 7px 7px",
-              backgroundPosition: "0 0, 1px 1px, 0.5px 0.5px, 0.25px 0.25px",
-              mixBlendMode: "multiply",
-            }}
-          />
         )}
       </AnimatePresence>
 
