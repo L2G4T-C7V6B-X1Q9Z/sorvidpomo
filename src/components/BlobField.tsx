@@ -28,6 +28,11 @@ type Blob = {
 };
 
 export default function BlobField({ count = 6 }: { count?: number }) {
+  // Reduce blob count on mobile to save CPU
+  const blobCount = typeof window !== "undefined" && window.innerWidth < 768
+    ? Math.min(count, 3)
+    : count;
+
   const blobsRef = useRef<Blob[]>(
     Array.from({ length: count }, (_, i) => {
       const c = SUNSET[i % SUNSET.length];
@@ -50,8 +55,10 @@ export default function BlobField({ count = 6 }: { count?: number }) {
   const lastDraw = useRef(0);
 
   useAnimationFrame((t) => {
-    const dt = t - last.current;
+    const rawDt = t - last.current;
     last.current = t;
+    // Cap deltaTime to 100ms to prevent teleporting after tab switch
+    const dt = Math.min(rawDt, 100);
 
     blobsRef.current.forEach((b, idx) => {
       const turn = Math.sin(t * 0.00004 + idx * 0.7) * 0.0016;
@@ -65,24 +72,11 @@ export default function BlobField({ count = 6 }: { count?: number }) {
       b.x += b.vx * 0.58;
       b.y += b.vy * 0.58;
 
-      const padX = 1.5,
-        padY = 2.0;
-      if (b.x < padX) {
-        b.x = padX;
-        b.vx = Math.abs(b.vx) * 0.96;
-      }
-      if (b.x > 100 - padX) {
-        b.x = 100 - padX;
-        b.vx = -Math.abs(b.vx) * 0.96;
-      }
-      if (b.y < padY) {
-        b.y = padY;
-        b.vy = Math.abs(b.vy) * 0.96;
-      }
-      if (b.y > 100 - padY) {
-        b.y = 100 - padY;
-        b.vy = -Math.abs(b.vy) * 0.96;
-      }
+      const padX = 1.5, padY = 2.0;
+      if (b.x < padX) { b.x = padX; b.vx = Math.abs(b.vx) * 0.96; }
+      if (b.x > 100 - padX) { b.x = 100 - padX; b.vx = -Math.abs(b.vx) * 0.96; }
+      if (b.y < padY) { b.y = padY; b.vy = Math.abs(b.vy) * 0.96; }
+      if (b.y > 100 - padY) { b.y = 100 - padY; b.vy = -Math.abs(b.vy) * 0.96; }
 
       b.phase += b.wobble * dt;
     });
@@ -96,11 +90,17 @@ export default function BlobField({ count = 6 }: { count?: number }) {
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-      {blobsRef.current.map((b, i) => {
-        const r1 = 38 + 24 * Math.sin(b.phase + 0.0);
-        const r2 = 62 - 22 * Math.cos(b.phase + 0.8);
-        const r3 = 44 + 26 * Math.sin(b.phase + 1.6);
-        const r4 = 56 - 20 * Math.cos(b.phase + 2.2);
+      {blobsRef.current.slice(0, blobCount).map((b, i) => {
+        // Precompute sin/cos values for shape morphing
+        const sp0 = Math.sin(b.phase);
+        const cp1 = Math.cos(b.phase + 0.8);
+        const sp2 = Math.sin(b.phase + 1.6);
+        const cp3 = Math.cos(b.phase + 2.2);
+
+        const r1 = 38 + 24 * sp0;
+        const r2 = 62 - 22 * cp1;
+        const r3 = 44 + 26 * sp2;
+        const r4 = 56 - 20 * cp3;
         const e1 = 36 + 22 * Math.cos(b.phase + 0.4);
         const e2 = 48 - 20 * Math.sin(b.phase + 1.2);
         const e3 = 60 + 18 * Math.cos(b.phase + 1.9);
@@ -111,9 +111,11 @@ export default function BlobField({ count = 6 }: { count?: number }) {
             key={i}
             className="absolute"
             style={{
-              left: `${b.x}vw`,
-              top: `${b.y}vh`,
-              transform: `translate(-50%, -50%) scale(${b.s})`,
+              // Use transform for position instead of top/left — GPU composited, no layout thrash
+              left: 0,
+              top: 0,
+              transform: `translate(calc(${b.x}vw - 50%), calc(${b.y}vh - 50%)) scale(${b.s})`,
+              willChange: "transform",
               width: "62vw",
               height: "62vw",
               background: b.grad,
